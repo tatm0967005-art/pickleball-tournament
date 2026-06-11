@@ -55,7 +55,7 @@
     .admin-layout{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}.side{position:sticky;top:92px;display:grid;gap:8px}.side button{border-radius:13px;text-align:left;justify-content:flex-start}.side button.active{background:var(--primary);color:#fff;border-color:var(--primary)}.admin-pane{display:none}.admin-pane.active{display:block}
     .image-preview{width:100%;min-height:120px;border:1px dashed #cbd5e1;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:#f8fafc;color:var(--muted);text-align:center;padding:10px}.image-preview img{width:100%;height:170px;object-fit:cover;border-radius:12px}.reward-img{width:90px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
     .category-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.check{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-weight:800;color:#334155}.check input{width:auto}
-    .empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;background:#fff;color:var(--muted);text-align:center}.footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 30px;border-top:1px solid var(--line)}
+    .empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;background:#fff;color:var(--muted);text-align:center}.signup-count{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #bbf7d0;background:linear-gradient(135deg,#ecfdf5,#f7fee7);color:#166534;border-radius:16px;padding:12px 14px;font-weight:900}.signup-count b{font-size:22px}.signup-count span{font-size:13px;color:#166534}.signup-hot{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:999px;padding:7px 10px;font-weight:900;font-size:13px}.footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 30px;border-top:1px solid var(--line)}
     @media(max-width:950px){.grid.two,.grid.three,.hero,.portal-title,.admin-layout{grid-template-columns:1fr}h1{font-size:34px}.side{position:static;grid-template-columns:repeat(2,1fr)}.category-checks{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.topbar{flex-direction:column;align-items:flex-start;padding:12px 0}nav{justify-content:flex-start}.formgrid{grid-template-columns:1fr}.category-checks,.side{grid-template-columns:1fr}.hero{padding:20px}}
   </style>
 </head>
@@ -91,8 +91,8 @@
         <div class="summary-card">
           <div class="stat"><b id="portalTournamentCount">0</b><span>Giải đấu</span></div>
           <div class="stat"><b id="portalOpenCount">0</b><span>Đang mở</span></div>
+          <div class="stat"><b id="portalRegCount">0</b><span>Lượt đăng ký</span></div>
           <div class="stat"><b id="portalMatchCount">0</b><span>Trận đấu</span></div>
-          <div class="stat"><b id="portalRewardCount">0</b><span>Giải thưởng</span></div>
         </div>
       </div>
     </div>
@@ -284,7 +284,7 @@ const CATEGORIES = ["Đôi nam","Đôi nữ","Đôi nam nữ","Đơn nam","Đơn
 const SELECTED_TOURNAMENT_KEY = "pb.supabase.selected";
 let sb = null;
 let state = {
-  tournaments: [], rewards: [], matches: [], rankings: [],
+  tournaments: [], rewards: [], matches: [], rankings: [], publicStats: [],
   selectedTournamentId: localStorage.getItem(SELECTED_TOURNAMENT_KEY) || "",
   adminPassword: sessionStorage.getItem("pb.admin.password") || "",
   user: null,
@@ -330,6 +330,12 @@ async function loadAll(){
     state.rewards = rewards.data || [];
     state.matches = matches.data || [];
     state.rankings = rankings.data || [];
+    try{
+      state.publicStats = await rpc("get_public_tournament_stats", {});
+    }catch(statErr){
+      console.warn("Public registration stats not available yet. Run supabase_update_v10.sql.", statErr);
+      state.publicStats = [];
+    }
     if(state.selectedTournamentId && !state.tournaments.some(t=>t.id===state.selectedTournamentId)){
       state.selectedTournamentId = "";
       localStorage.removeItem(SELECTED_TOURNAMENT_KEY);
@@ -368,11 +374,15 @@ function cardBannerStyle(t){
 function tRewards(id=state.selectedTournamentId){return state.rewards.filter(x=>x.tournament_id===id)}
 function tMatches(id=state.selectedTournamentId){return state.matches.filter(x=>x.tournament_id===id)}
 function tRankings(id=state.selectedTournamentId){return state.rankings.filter(x=>x.tournament_id===id)}
+function tStats(id){return state.publicStats.find(x=>x.tournament_id===id) || {registration_count:0, approved_count:0, paid_count:0}}
+function regCount(id){return Number(tStats(id).registration_count || 0)}
+function approvedCount(id){return Number(tStats(id).approved_count || 0)}
+function paidCount(id){return Number(tStats(id).paid_count || 0)}
 function renderHome(){
   document.getElementById("portalTournamentCount").textContent=state.tournaments.length;
   document.getElementById("portalOpenCount").textContent=state.tournaments.filter(t=>t.status==="Open").length;
+  document.getElementById("portalRegCount").textContent=state.publicStats.reduce((s,x)=>s+Number(x.registration_count||0),0);
   document.getElementById("portalMatchCount").textContent=state.matches.length;
-  document.getElementById("portalRewardCount").textContent=state.rewards.length;
   const target=document.getElementById("tournamentCards");
   if(!state.tournaments.length){target.innerHTML=`<div class="empty" style="grid-column:1/-1">Chưa có giải đấu nào. Admin đăng nhập để tạo giải đầu tiên.</div>`;return}
   target.innerHTML=state.tournaments.map(t=>`
@@ -381,9 +391,10 @@ function renderHome(){
       <div class="card-body">
         <div class="meta"><span class="badge blue">🏓 Pickleball</span><span class="badge">📅 ${esc(t.event_date||"Chưa cập nhật")}</span><span class="badge">📍 ${esc(t.location||"Chưa cập nhật")}</span></div>
         <div class="mini">${esc((t.categories||[]).join(" • "))}</div>
+        <div class="signup-count"><div><span>Đã có</span><br><b>${regCount(t.id)}</b> <span>vận động viên đăng ký</span></div><div class="signup-hot">🔥 Cùng tham gia</div></div>
         <div><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}</div>
         <div class="mini">${esc(t.description||"")}</div>
-        <div class="meta"><span class="badge orange">${tMatches(t.id).length} trận</span><span class="badge blue">${tRewards(t.id).length} giải thưởng</span></div>
+        <div class="meta"><span class="badge green">${approvedCount(t.id)} đã duyệt</span><span class="badge orange">${tMatches(t.id).length} trận</span><span class="badge blue">${tRewards(t.id).length} giải thưởng</span></div>
         <div class="actions" style="margin-top:auto"><button class="btn primary" onclick="openTournament('${t.id}')">Vào giải</button><button class="btn green" onclick="openRegister('${t.id}')">Đăng ký</button></div>
       </div>
     </div>`).join("");
@@ -398,7 +409,7 @@ function bannerHtml(t,actions=true){
       <div class="meta"><span class="badge dark">📅 ${esc(t.event_date||"Chưa cập nhật")}</span><span class="badge dark">📍 ${esc(t.location||"Chưa cập nhật")}</span><span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span></div>
       ${actions?`<div class="actions"><button class="btn green" onclick="showSection('register')">Đăng ký giải này</button><button class="btn" onclick="showSection('user')">Người chơi đăng nhập</button></div>`:""}
     </div>
-    <div class="hero-card"><h3>Thông tin nhanh</h3><div class="stats"><div class="stat"><b>${(t.categories||[]).length}</b><span>Nội dung</span></div><div class="stat"><b>${tMatches(t.id).length}</b><span>Trận đấu</span></div><div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div><div class="stat"><b>${tRankings(t.id).length}</b><span>Thứ hạng</span></div></div></div>
+    <div class="hero-card"><h3>Thông tin nhanh</h3><div class="stats"><div class="stat"><b>${regCount(t.id)}</b><span>Đã đăng ký</span></div><div class="stat"><b>${(t.categories||[]).length}</b><span>Nội dung</span></div><div class="stat"><b>${tMatches(t.id).length}</b><span>Trận đấu</span></div><div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div></div></div>
   </div>`;
 }
 function renderTournamentDetail(){
