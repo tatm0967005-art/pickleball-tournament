@@ -33,7 +33,7 @@
     .grid{display:grid;gap:18px}.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}.grid.four{grid-template-columns:repeat(4,1fr)}
     .hero-full{border-radius:28px;min-height:520px;background:linear-gradient(120deg, rgba(8,20,40,.88), rgba(30,64,175,.62));background-size:cover;background-position:center;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.38);position:relative;overflow:hidden;color:white;display:flex;align-items:flex-end;padding:30px}
     .hero-full:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.75));pointer-events:none}
-    .hero-full .hero-content{position:relative;z-index:1;max-width:800px}
+    .hero-full .hero-content{position:relative;z-index:1;max-width:800px}.event-banner-clean{background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden}.event-banner-image{width:100%;height:min(62vw,620px);min-height:320px;background:linear-gradient(120deg,#0f2a55,#1e40af);background-size:cover;background-position:center;display:block}.event-info-panel{padding:24px;background:#fff}.event-info-head{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:start}.event-info-head h1{font-size:38px;line-height:1.12;margin-bottom:10px}.event-info-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start}.event-detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}.event-detail-box{border:1px solid var(--line);border-radius:16px;background:#f8fafc;padding:14px}.event-detail-box b{display:block;font-size:13px;color:#334155;margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}.event-detail-box span{font-size:16px;font-weight:900;color:var(--ink)}.event-detail-box small{display:block;color:var(--muted);margin-top:4px;line-height:1.35}
     .hero-full h1{font-size:52px;text-shadow:0 12px 28px rgba(0,0,0,.38)}
     .hero-full p{color:rgba(255,255,255,.86);font-size:17px;line-height:1.55}
     .portal-title{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:stretch;margin-bottom:18px}
@@ -56,7 +56,7 @@
     .empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;background:#fff;color:var(--muted);text-align:center}.signup-count{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #bbf7d0;background:linear-gradient(135deg,#ecfdf5,#f7fee7);color:#166534;border-radius:16px;padding:12px 14px;font-weight:900}.signup-count b{font-size:22px}.signup-count span{font-size:13px;color:#166534}.signup-hot{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:999px;padding:7px 10px;font-weight:900;font-size:13px}
     .rolebar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.rolechip{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:9px 12px;border-radius:999px;font-weight:900}
     .footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 30px;border-top:1px solid var(--line)}
-    @media(max-width:950px){.grid.two,.grid.three,.grid.four,.portal-title{grid-template-columns:1fr}.hero-full{min-height:420px}.hero-full h1{font-size:36px}.category-checks{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.topbar{flex-direction:column;align-items:flex-start;padding:12px 0}nav{justify-content:flex-start}.formgrid{grid-template-columns:1fr}.category-checks{grid-template-columns:1fr}.hero-full{padding:20px;min-height:360px}}
+    @media(max-width:950px){.grid.two,.grid.three,.grid.four,.portal-title,.event-info-head,.event-detail-grid{grid-template-columns:1fr}.event-info-actions{justify-content:flex-start}.hero-full{min-height:420px}.hero-full h1{font-size:36px}.category-checks{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.topbar{flex-direction:column;align-items:flex-start;padding:12px 0}nav{justify-content:flex-start}.formgrid{grid-template-columns:1fr}.category-checks{grid-template-columns:1fr}.hero-full{padding:20px;min-height:360px}}
   </style>
 </head>
 <body>
@@ -206,24 +206,44 @@ function renderInfo(){
   const t=selectedTournament();
   if(!t){featuredInfo.innerHTML=`<div class="panel"><h1>Thông tin giải đấu</h1><p class="sub">Chưa có giải đấu. Admin login để tạo giải đầu tiên.</p><button class="btn primary" onclick="showSection('login')">Login</button></div>`;return}
   featuredInfo.innerHTML=`
-    <div class="hero-full" ${bannerStyle(t)}>
-      <div class="hero-content">
-        <span class="badge dark">🏓 Pickleball • ${esc(t.status||"Open")}</span>
-        <h1>${esc(t.name)}</h1>
-        <p>${esc(t.description||"")}</p>
-        <div class="meta">
-          <span class="badge dark">📅 Thi đấu: ${esc(t.event_date||"TBC")}</span>
-          <span class="badge dark">⏳ Hạn đăng ký: ${formatDate(t.registration_deadline)}</span>
-          <span class="badge dark">📍 ${esc(t.location||"TBC")}</span>
-          <span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span>
+    <div class="event-banner-clean">
+      <div class="event-banner-image" ${t?.banner_image?`style="background-image:url('${t.banner_image}')"`:""}></div>
+      <div class="event-info-panel">
+        <div class="event-info-head">
+          <div>
+            <div class="meta" style="margin-bottom:10px">
+              <span class="badge blue">🏓 Pickleball</span>
+              <span class="badge ${t.status==="Open"?"green":t.status==="Closed"?"orange":"red"}">${esc(t.status||"Open")}</span>
+              <span class="badge gold">🔥 ${regCount(t.id)} vận động viên đã đăng ký</span>
+            </div>
+            <h1>${esc(t.name)}</h1>
+            <p class="sub">${esc(t.description||"")}</p>
+          </div>
+          <div class="event-info-actions">
+            <button class="btn green" onclick="openRegister('${t.id}')">Đăng ký giải này</button>
+            <button class="btn primary" onclick="openTournament('${t.id}')">Xem chi tiết</button>
+            <button class="btn" onclick="showSection('list')">Danh sách giải</button>
+          </div>
         </div>
-        <div class="grid four hero-stat" style="margin-top:16px">
+
+        <div class="event-detail-grid">
+          <div class="event-detail-box"><b>Thời gian thi đấu</b><span>${esc(t.event_date||"TBC")}</span></div>
+          <div class="event-detail-box"><b>Hạn chót đăng ký</b><span>${formatDate(t.registration_deadline)}</span></div>
+          <div class="event-detail-box"><b>Địa điểm</b><span>${esc(t.location||"TBC")}</span></div>
+          <div class="event-detail-box"><b>Lệ phí</b><span>${money(t.entry_fee,t.currency)}</span></div>
+        </div>
+
+        <div class="grid four" style="margin-top:18px">
           <div class="stat"><b>${regCount(t.id)}</b><span>Đã đăng ký</span></div>
           <div class="stat"><b>${(t.categories||[]).length}</b><span>Nội dung</span></div>
           <div class="stat"><b>${tMatches(t.id).length}</b><span>Trận đấu</span></div>
           <div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div>
         </div>
-        <div class="actions"><button class="btn green" onclick="openRegister('${t.id}')">Đăng ký giải này</button><button class="btn" onclick="openTournament('${t.id}')">Xem chi tiết</button></div>
+
+        <div class="panel" style="box-shadow:none;margin-top:18px;background:#f8fafc">
+          <h3>Nội dung thi đấu</h3>
+          <div class="meta">${(t.categories||[]).map(c=>`<span class="badge blue">${esc(c)}</span>`).join("")}</div>
+        </div>
       </div>
     </div>`;
 }
@@ -322,7 +342,33 @@ function renderTournamentDetail(){
 }
 function setTab(id){state.activeTab=id;renderTournamentDetail();if(id==="registrations"||id==="admin_regs"||id==="report")loadCurrentRegistrations()}
 window.setTab=setTab;
-function heroMini(t){return `<div class="hero-full" ${bannerStyle(t)} style="min-height:380px"><div class="hero-content"><span class="badge dark">${esc(t.status||"Open")}</span><h1>${esc(t.name)}</h1><div class="meta"><span class="badge dark">📅 ${esc(t.event_date||"TBC")}</span><span class="badge dark">⏳ Hạn đăng ký: ${formatDate(t.registration_deadline)}</span><span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span></div></div></div>`}
+function heroMini(t){return `
+  <div class="event-banner-clean">
+    <div class="event-banner-image" ${t?.banner_image?`style="background-image:url('${t.banner_image}')"`:""}></div>
+    <div class="event-info-panel">
+      <div class="event-info-head">
+        <div>
+          <div class="meta" style="margin-bottom:10px">
+            <span class="badge blue">🏓 Pickleball</span>
+            <span class="badge ${t.status==="Open"?"green":t.status==="Closed"?"orange":"red"}">${esc(t.status||"Open")}</span>
+            <span class="badge gold">🔥 ${regCount(t.id)} vận động viên đã đăng ký</span>
+          </div>
+          <h1>${esc(t.name)}</h1>
+          <p class="sub">${esc(t.description||"")}</p>
+        </div>
+        <div class="event-info-actions">
+          <button class="btn green" onclick="openRegister('${t.id}')">Đăng ký</button>
+          <button class="btn" onclick="showSection('list')">Quay lại danh sách</button>
+        </div>
+      </div>
+      <div class="event-detail-grid">
+        <div class="event-detail-box"><b>Thời gian thi đấu</b><span>${esc(t.event_date||"TBC")}</span></div>
+        <div class="event-detail-box"><b>Hạn chót đăng ký</b><span>${formatDate(t.registration_deadline)}</span></div>
+        <div class="event-detail-box"><b>Địa điểm</b><span>${esc(t.location||"TBC")}</span></div>
+        <div class="event-detail-box"><b>Lệ phí</b><span>${money(t.entry_fee,t.currency)}</span></div>
+      </div>
+    </div>
+  </div>`}
 function renderTabContent(){
   const t=state.selectedTournamentId?state.tournaments.find(x=>x.id===state.selectedTournamentId):null;
   const el=document.getElementById("tabContent"); if(!el)return;
