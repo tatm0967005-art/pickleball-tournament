@@ -122,3 +122,35 @@ Tuy nhiên đây vẫn là mô hình đơn giản cho nhóm nhỏ. Nếu dùng l
 - Storage bucket cho ảnh banner/giải thưởng thay vì lưu base64 trong database
 - Audit log cho các thay đổi Admin
 - Email confirmation cho đăng ký
+
+
+## Update v8
+
+- Người chơi đăng nhập chỉ bằng Email đã đăng ký.
+- Sau khi đăng nhập, người chơi xem được danh sách đã đăng ký của giải đang chọn.
+- Danh sách người chơi không hiển thị email/số điện thoại của người khác.
+- Cần chạy thêm file `supabase_update_v8.sql` trong Supabase SQL Editor trước khi upload `index.html` mới.
+
+
+## v9 update
+
+- Người chơi đăng nhập chỉ bằng email.
+- Sau khi đăng nhập, người chơi xem được toàn bộ thông tin đăng ký của giải:
+  - Họ tên
+  - Email
+  - Số điện thoại
+  - Đơn vị / CLB
+  - Nội dung thi đấu
+  - Trình độ
+  - Đồng đội
+  - Email đồng đội
+  - Trạng thái duyệt
+  - Trạng thái thanh toán
+  - Ghi chú
+
+## Cách update từ v8 lên v9
+
+1. Vào Supabase SQL Editor.
+2. Chạy file `supabase_update_v9.sql`.
+3. Thay file `index.html` trên GitHub bằng file v9.
+4. Netlify tự deploy lại.

@@ -111,7 +111,7 @@
     <div id="registerSelectedBanner"></div>
     <div class="panel" style="margin-top:18px">
       <h2>Đăng ký thi đấu</h2>
-      <p class="sub">Không cần tạo mật khẩu. Người chơi nhập đúng Email + Họ tên để lần sau đăng nhập tra cứu thông tin.</p>
+      <p class="sub">Không cần tạo mật khẩu. Người chơi đăng ký bằng Email và lần sau chỉ cần nhập Email để đăng nhập tra cứu thông tin.</p>
       <div id="registerAlert"></div>
       <form id="registrationForm">
         <div class="formgrid">
@@ -134,12 +134,11 @@
     <div id="userSelectedBanner"></div>
     <div class="panel" id="userLoginGate" style="margin-top:18px">
       <h2>Đăng nhập người dùng</h2>
-      <p class="sub">Chọn đúng giải, nhập Email + Họ tên đã đăng ký. Sau khi đăng nhập mới xem thông tin cá nhân và gửi kết quả trận của mình.</p>
+      <p class="sub">Chọn đúng giải, nhập Email đã đăng ký. Sau khi đăng nhập mới xem thông tin cá nhân, danh sách đã đăng ký và gửi kết quả trận của mình.</p>
       <div id="userAlert"></div>
       <form id="userLoginForm">
         <div class="formgrid">
-          <div><label>Email</label><input required type="email" id="loginEmail"></div>
-          <div><label>Họ tên đã đăng ký</label><input required id="loginFullName"></div>
+          <div class="full"><label>Email đã đăng ký</label><input required type="email" id="loginEmail" placeholder="vd: player@email.com"></div>
         </div>
         <div class="actions"><button class="btn primary" type="submit">Đăng nhập</button></div>
       </form>
@@ -148,6 +147,11 @@
       <div class="grid two">
         <div class="panel"><div class="itemhead"><h2>Thông tin đăng ký</h2><button class="btn red" onclick="userLogout()">Đăng xuất</button></div><div id="userInfoPanel"></div></div>
         <div class="panel"><h2>Trận của tôi</h2><p class="sub">Kết quả gửi lên sẽ chờ Admin duyệt.</p><div id="myMatches"></div></div>
+      </div>
+      <div class="panel" style="margin-top:18px">
+        <h2>Danh sách đã đăng ký</h2>
+        <p class="sub">Người chơi sau khi đăng nhập có thể xem danh sách vận động viên/đội đã đăng ký trong giải. Không hiển thị email và số điện thoại của người khác.</p>
+        <div id="playerRegistrationList"></div>
       </div>
       <div class="grid two" style="margin-top:18px">
         <div class="panel"><h2>Lịch / kết quả toàn giải</h2><div id="userAllMatches"></div></div>
@@ -284,6 +288,7 @@ let state = {
   selectedTournamentId: localStorage.getItem(SELECTED_TOURNAMENT_KEY) || "",
   adminPassword: sessionStorage.getItem("pb.admin.password") || "",
   user: null,
+  playerRegistrations: [],
   adminRegistrations: [],
   pendingSubmissions: []
 };
@@ -431,21 +436,47 @@ function renderUser(){
 }
 document.getElementById("userLoginForm").addEventListener("submit",async e=>{
   e.preventDefault(); const t=selectedTournament(); if(!t)return;
+  const email = loginEmail.value.trim();
   try{
-    const rows=await rpc("get_registration_by_login",{p_tournament_id:t.id,p_email:loginEmail.value.trim(),p_full_name:loginFullName.value.trim()});
-    if(!rows || !rows.length){setAlert("userAlert","danger","Không tìm thấy đăng ký trong giải này.");return}
-    state.user=rows[0]; setAlert("userAlert","",""); renderUser();
+    const rows=await rpc("get_registration_by_email",{p_tournament_id:t.id,p_email:email});
+    if(!rows || !rows.length){setAlert("userAlert","danger","Không tìm thấy đăng ký bằng email này trong giải đã chọn.");return}
+    state.user=rows[0];
+    state.playerRegistrations=await rpc("list_registrations_for_player",{p_tournament_id:t.id,p_email:email});
+    setAlert("userAlert","",""); renderUser();
   }catch(err){setAlert("userAlert","danger",err.message||err)}
 });
-function userLogout(){state.user=null;renderUser()} window.userLogout=userLogout;
+function userLogout(){state.user=null;state.playerRegistrations=[];renderUser()} window.userLogout=userLogout;
 function isMyMatch(m,reg){const hay=norm([m.team_a,m.team_b].join(" ")); return hay.includes(norm(reg.full_name)) || (reg.partner_name && hay.includes(norm(reg.partner_name)))}
 function renderUserInfo(t,reg){
   document.getElementById("userInfoPanel").innerHTML=`<div class="cardlist"><div class="item"><b>Họ tên:</b> ${esc(reg.full_name)}</div><div class="item"><b>Email:</b> ${esc(reg.email)}</div><div class="item"><b>Nội dung:</b> ${esc(reg.category)}</div><div class="item"><b>Đồng đội:</b> ${esc(reg.partner_name||"Không có")}</div><div class="item"><b>Trạng thái:</b> <span class="badge ${reg.status==="Approved"?"green":reg.status==="Rejected"?"red":"orange"}">${esc(reg.status)}</span> <span class="badge ${reg.payment_status==="Paid"?"green":"orange"}">${esc(reg.payment_status)}</span></div></div>`;
+  renderPlayerRegistrationList();
   const my=tMatches(t.id).filter(m=>isMyMatch(m,reg));
   document.getElementById("myMatches").innerHTML=my.length?`<div class="cardlist">`+my.map(m=>`<div class="item"><div class="itemhead"><b>${esc(m.team_a)} vs ${esc(m.team_b)}</b><span class="badge blue">${esc(m.match_round||"")}</span></div><div class="mini">${esc(m.category||"")} • ${formatDate(m.match_time)} • ${esc(m.court||"")}</div><div><b>Điểm chính thức:</b> ${m.score_a!==null&&m.score_b!==null?esc(m.score_a)+" - "+esc(m.score_b):"Chưa cập nhật"}</div><form onsubmit="submitPlayerResult(event,'${m.id}')"><div class="formgrid" style="margin-top:10px"><div><label>Điểm A</label><input required type="number" min="0" name="scoreA"></div><div><label>Điểm B</label><input required type="number" min="0" name="scoreB"></div><div class="full"><label>Ghi chú</label><input name="note"></div></div><div class="actions"><button class="btn orange" type="submit">Gửi kết quả cho Admin duyệt</button></div></form></div>`).join("")+`</div>`:`<p class="muted">Chưa có trận nào khớp với tên bạn hoặc đồng đội.</p>`;
   document.getElementById("userAllMatches").innerHTML=publicMatchesHtml(t.id);
   document.getElementById("userRanking").innerHTML=publicRankingsHtml(t.id);
 }
+function renderPlayerRegistrationList(){
+  const target=document.getElementById("playerRegistrationList");
+  if(!target) return;
+  const rows=state.playerRegistrations||[];
+  if(!rows.length){
+    target.innerHTML=`<p class="muted">Chưa có danh sách đăng ký hoặc chưa tải được dữ liệu.</p>`;
+    return;
+  }
+  target.innerHTML=`<div class="tablewrap"><table><thead><tr><th>#</th><th>Vận động viên</th><th>Liên hệ</th><th>Nội dung</th><th>Đồng đội</th><th>Trạng thái</th><th>Thanh toán</th><th>Ghi chú</th></tr></thead><tbody>`+
+    rows.map((r,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><b>${esc(r.full_name)}</b>${r.organization?`<br><span class="mini">${esc(r.organization)}</span>`:""}</td>
+      <td>${r.email?`<b>Email:</b> ${esc(r.email)}<br>`:""}${r.phone?`<b>Phone:</b> ${esc(r.phone)}`:""}</td>
+      <td>${esc(r.category||"")}<br><span class="mini">${esc(r.level||"")}</span></td>
+      <td>${esc(r.partner_name||"-")}${r.partner_email?`<br><span class="mini">${esc(r.partner_email)}</span>`:""}</td>
+      <td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td>
+      <td><span class="badge ${r.payment_status==="Paid"?"green":"orange"}">${esc(r.payment_status||"Unpaid")}</span></td>
+      <td>${esc(r.note||"")}</td>
+    </tr>`).join("")+
+    `</tbody></table></div>`;
+}
+
 async function submitPlayerResult(e,matchId){
   e.preventDefault(); const t=selectedTournament(); const reg=state.user; const match=tMatches(t.id).find(m=>m.id===matchId); if(!match||!isMyMatch(match,reg))return alert("Bạn chỉ được gửi kết quả cho trận của mình.");
   const fd=new FormData(e.target);
