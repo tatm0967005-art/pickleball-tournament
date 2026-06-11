@@ -3,94 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickleball Tournament Portal - Supabase</title>
+  <title>Pickleball Tournament Portal - Role Based</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js"></script>
   <style>
     :root{
       --bg:#f4f7fb; --card:#fff; --ink:#102033; --muted:#64748b; --line:#e2e8f0;
       --primary:#2563eb; --green:#16a34a; --lime:#84cc16; --orange:#f97316; --red:#dc2626;
-      --shadow:0 18px 45px rgba(15,23,42,.08); --radius:18px;
+      --navy:#0f2a55; --gold:#f6c453; --shadow:0 18px 45px rgba(15,23,42,.08); --radius:18px;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:
-      radial-gradient(circle at 8% 0%, rgba(132,204,22,.22), transparent 28%),
-      radial-gradient(circle at 92% 8%, rgba(37,99,235,.20), transparent 30%),
-      var(--bg);}
-    header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-    .wrap{max-width:1220px;margin:0 auto;padding:0 18px}
+      radial-gradient(circle at 8% 0%, rgba(132,204,22,.18), transparent 28%),
+      radial-gradient(circle at 92% 8%, rgba(37,99,235,.18), transparent 30%),var(--bg);}
+    header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+    .wrap{max-width:1240px;margin:0 auto;padding:0 18px}
     .topbar{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:14px}
-    .brand{display:flex;align-items:center;gap:12px;font-weight:900}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900}.brand small{display:block;font-weight:600;color:var(--muted);margin-top:2px}
     .logo{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#2563eb,#84cc16);display:grid;place-items:center;color:white;font-size:25px;box-shadow:0 12px 24px rgba(37,99,235,.22)}
-    .brand small{display:block;font-weight:600;color:var(--muted);margin-top:2px}
     nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     button,.btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 14px;border-radius:999px;cursor:pointer;font-weight:800;transition:.15s ease;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
     button:hover,.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(15,23,42,.08)}
     button.active,.btn.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
     .btn.green{background:var(--green);border-color:var(--green);color:#fff}.btn.orange{background:#fff7ed;border-color:#fed7aa;color:#c2410c}.btn.red{background:#fff;border-color:#fecaca;color:#b91c1c}.btn.gray{background:#f8fafc}
     main{padding:26px 0 64px}.section{display:none}.section.active{display:block}
-    .panel{background:rgba(255,255,255,.95);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+    .panel{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
     h1,h2,h3{margin:0 0 12px}h1{font-size:42px;line-height:1.05}h2{font-size:28px}h3{font-size:20px}
     .sub{margin:-4px 0 16px;color:var(--muted);line-height:1.55}.muted{color:var(--muted)}.mini{font-size:12px;color:var(--muted);line-height:1.45}
-    .grid{display:grid;gap:18px}.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}
+    .grid{display:grid;gap:18px}.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}.grid.four{grid-template-columns:repeat(4,1fr)}
+    .hero-full{border-radius:28px;min-height:520px;background:linear-gradient(120deg, rgba(8,20,40,.88), rgba(30,64,175,.62));background-size:cover;background-position:center;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.38);position:relative;overflow:hidden;color:white;display:flex;align-items:flex-end;padding:30px}
+    .hero-full:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.75));pointer-events:none}
+    .hero-full .hero-content{position:relative;z-index:1;max-width:800px}
+    .hero-full h1{font-size:52px;text-shadow:0 12px 28px rgba(0,0,0,.38)}
+    .hero-full p{color:rgba(255,255,255,.86);font-size:17px;line-height:1.55}
     .portal-title{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:stretch;margin-bottom:18px}
-    .portal-card{background:linear-gradient(135deg,#102033,#1e40af);color:#fff;border-radius:26px;padding:26px;box-shadow:var(--shadow);overflow:hidden;position:relative}
-    .portal-card:after{content:"🏓";position:absolute;right:24px;bottom:-22px;font-size:110px;opacity:.13}
-    .portal-card p{color:rgba(255,255,255,.78);line-height:1.55}
-    .hero{border-radius:26px;overflow:hidden;min-height:315px;background:linear-gradient(120deg, rgba(8,20,40,.88), rgba(30,64,175,.70));color:#fff;display:grid;grid-template-columns:1.25fr .75fr;gap:18px;padding:28px;position:relative;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.38);background-size:cover;background-position:center}
-    .hero:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 20%, rgba(132,204,22,.45), transparent 24%),radial-gradient(circle at 82% 24%, rgba(255,255,255,.18), transparent 18%);pointer-events:none}.hero>*{position:relative;z-index:1}
-    .hero p{color:rgba(255,255,255,.84);line-height:1.55;font-size:16px}.hero-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(8px);border-radius:20px;padding:18px}
-    .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:14px}.stat b{display:block;font-size:28px;color:#fff}.stat span{font-size:13px;color:rgba(255,255,255,.78);font-weight:800}
-    .summary-card{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.summary-card .stat{background:#fff;border:1px solid var(--line)}.summary-card .stat b{color:var(--ink)}.summary-card .stat span{color:var(--muted)}
+    .portal-card{background:linear-gradient(135deg,#102033,#1e40af);color:#fff;border-radius:26px;padding:26px;box-shadow:var(--shadow);overflow:hidden;position:relative}.portal-card:after{content:"🏓";position:absolute;right:24px;bottom:-22px;font-size:110px;opacity:.13}.portal-card p{color:rgba(255,255,255,.78);line-height:1.55}
+    .summary-card{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.stat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}.stat b{display:block;font-size:28px;color:var(--ink)}.stat span{font-size:13px;color:var(--muted);font-weight:800}
+    .hero-stat .stat{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22)}.hero-stat .stat b{color:#fff}.hero-stat .stat span{color:rgba(255,255,255,.8)}
     .tournament-card{border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 12px 26px rgba(15,23,42,.06);overflow:hidden;display:flex;flex-direction:column;min-height:100%}
-    .card-banner{height:150px;background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(132,204,22,.86));color:white;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center;position:relative}.card-banner:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.45))}.card-banner>*{position:relative;z-index:1}.card-banner b{font-size:21px;line-height:1.15}
+    .card-banner{height:170px;background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(132,204,22,.86));color:white;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;background-size:cover;background-position:center;position:relative}.card-banner:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.55))}.card-banner>*{position:relative;z-index:1}.card-banner b{font-size:21px;line-height:1.15}
     .card-body{padding:16px;display:flex;flex-direction:column;gap:10px;flex:1}.meta{display:flex;gap:8px;flex-wrap:wrap}
-    .badge{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid #e2e8f0;color:#334155;background:#f8fafc;white-space:nowrap}.badge.blue{background:#dbeafe;border-color:#bfdbfe;color:#1e40af}.badge.green{background:#dcfce7;border-color:#bbf7d0;color:#166534}.badge.orange{background:#ffedd5;border-color:#fed7aa;color:#9a3412}.badge.red{background:#fee2e2;border-color:#fecaca;color:#991b1b}.badge.dark{background:rgba(15,23,42,.74);border-color:rgba(255,255,255,.22);color:#fff}
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid #e2e8f0;color:#334155;background:#f8fafc;white-space:nowrap}.badge.blue{background:#dbeafe;border-color:#bfdbfe;color:#1e40af}.badge.green{background:#dcfce7;border-color:#bbf7d0;color:#166534}.badge.orange{background:#ffedd5;border-color:#fed7aa;color:#9a3412}.badge.red{background:#fee2e2;border-color:#fecaca;color:#991b1b}.badge.dark{background:rgba(15,23,42,.74);border-color:rgba(255,255,255,.22);color:#fff}.badge.gold{background:#fef3c7;border-color:#fde68a;color:#92400e}
     label{display:block;font-size:13px;font-weight:900;color:#334155;margin-bottom:6px}
     input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;font-size:14px;color:var(--ink);background:#fff;outline:none}textarea{min-height:92px;resize:vertical}input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
     .formgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.formgrid .full{grid-column:1/-1}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
     .notice{border:1px solid #bfdbfe;background:#eff6ff;color:#1e3a8a;border-radius:14px;padding:12px 14px;line-height:1.5;margin-bottom:14px}.warn{border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;border-radius:14px;padding:12px 14px;line-height:1.5;margin-bottom:14px}.danger{border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:14px;padding:12px 14px;line-height:1.5;margin-bottom:14px}
     table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden}th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:top}th{background:#f8fafc;color:#334155;font-size:12px;text-transform:uppercase;letter-spacing:.04em}tr:last-child td{border-bottom:0}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
     .item{border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px}.itemhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}.cardlist{display:grid;gap:12px}.hidden{display:none!important}
-    .admin-layout{display:grid;grid-template-columns:250px 1fr;gap:18px;align-items:start}.side{position:sticky;top:92px;display:grid;gap:8px}.side button{border-radius:13px;text-align:left;justify-content:flex-start}.side button.active{background:var(--primary);color:#fff;border-color:var(--primary)}.admin-pane{display:none}.admin-pane.active{display:block}
-    .image-preview{width:100%;min-height:120px;border:1px dashed #cbd5e1;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:#f8fafc;color:var(--muted);text-align:center;padding:10px}.image-preview img{width:100%;height:170px;object-fit:cover;border-radius:12px}.reward-img{width:90px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tabs button{border-radius:14px}.tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .image-preview{width:100%;min-height:120px;border:1px dashed #cbd5e1;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:#f8fafc;color:var(--muted);text-align:center;padding:10px}.image-preview img{width:100%;height:190px;object-fit:cover;border-radius:12px}.reward-img{width:90px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--line)}
     .category-checks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.check{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fff;font-weight:800;color:#334155}.check input{width:auto}
-    .empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;background:#fff;color:var(--muted);text-align:center}.signup-count{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #bbf7d0;background:linear-gradient(135deg,#ecfdf5,#f7fee7);color:#166534;border-radius:16px;padding:12px 14px;font-weight:900}.signup-count b{font-size:22px}.signup-count span{font-size:13px;color:#166534}.signup-hot{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:999px;padding:7px 10px;font-weight:900;font-size:13px}.footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 30px;border-top:1px solid var(--line)}
-    @media(max-width:950px){.grid.two,.grid.three,.hero,.portal-title,.admin-layout{grid-template-columns:1fr}h1{font-size:34px}.side{position:static;grid-template-columns:repeat(2,1fr)}.category-checks{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.topbar{flex-direction:column;align-items:flex-start;padding:12px 0}nav{justify-content:flex-start}.formgrid{grid-template-columns:1fr}.category-checks,.side{grid-template-columns:1fr}.hero{padding:20px}}
+    .empty{border:1px dashed #cbd5e1;border-radius:18px;padding:24px;background:#fff;color:var(--muted);text-align:center}.signup-count{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #bbf7d0;background:linear-gradient(135deg,#ecfdf5,#f7fee7);color:#166534;border-radius:16px;padding:12px 14px;font-weight:900}.signup-count b{font-size:22px}.signup-count span{font-size:13px;color:#166534}.signup-hot{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #bbf7d0;border-radius:999px;padding:7px 10px;font-weight:900;font-size:13px}
+    .rolebar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.rolechip{background:#eff6ff;color:#1e40af;border:1px solid #bfdbfe;padding:9px 12px;border-radius:999px;font-weight:900}
+    .footer{text-align:center;color:var(--muted);font-size:13px;padding:20px 0 30px;border-top:1px solid var(--line)}
+    @media(max-width:950px){.grid.two,.grid.three,.grid.four,.portal-title{grid-template-columns:1fr}.hero-full{min-height:420px}.hero-full h1{font-size:36px}.category-checks{grid-template-columns:repeat(2,1fr)}}@media(max-width:620px){.topbar{flex-direction:column;align-items:flex-start;padding:12px 0}nav{justify-content:flex-start}.formgrid{grid-template-columns:1fr}.category-checks{grid-template-columns:1fr}.hero-full{padding:20px;min-height:360px}}
   </style>
 </head>
 <body>
 <header>
   <div class="wrap topbar">
-    <div class="brand"><div class="logo">🏓</div><span>Pickleball Portal<small>Netlify + Supabase</small></span></div>
+    <div class="brand"><div class="logo">🏓</div><span>Pickleball Portal<small>Thông tin giải • Đăng ký • Quản trị theo quyền</small></span></div>
     <nav id="mainNav">
-      <button data-section="home" class="active">Trang giải đấu</button>
-      <button data-section="tournament">Chi tiết giải</button>
-      <button data-section="register">Đăng ký</button>
-      <button data-section="user">Người dùng</button>
-      <button data-section="admin">Quản trị</button>
+      <button data-section="info" class="active">Thông tin giải đấu</button>
+      <button data-section="list">Danh sách giải đấu</button>
+      <button data-section="login">Login</button>
+      <button data-section="dashboard" id="navDashboard" class="hidden">Dashboard</button>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-  <div id="configWarning" class="danger hidden">
-    Chưa cấu hình Supabase. Vui lòng mở file <b>config.js</b> và điền <b>SUPABASE_URL</b> + <b>SUPABASE_ANON_KEY</b>.
-  </div>
+  <div id="configWarning" class="danger hidden">Chưa cấu hình Supabase. Vui lòng kiểm tra file config.js.</div>
 
-  <section id="home" class="section active">
+  <section id="info" class="section active">
+    <div id="featuredInfo"></div>
+  </section>
+
+  <section id="list" class="section">
     <div class="portal-title">
       <div class="portal-card">
         <span class="badge dark">Pickleball Tournament Portal</span>
         <h1>Danh sách giải đấu</h1>
-        <p>Dữ liệu giải đấu, đăng ký, lịch và kết quả được lưu trong Supabase. Sau này sửa code/deploy lại trên Netlify sẽ không làm mất dữ liệu đã tạo.</p>
-        <div class="actions"><button class="btn green" onclick="showSection('admin')">Admin tạo giải</button><button class="btn" onclick="loadAll()">Refresh dữ liệu</button></div>
+        <p>Người chơi có thể xem thông tin, hạn chót đăng ký và chọn từng giải để đăng ký. Sau khi login, người chơi sẽ thấy các giải đã đăng ký và danh sách đăng ký trong từng giải.</p>
+        <div class="actions"><button class="btn green" onclick="showSection('login')">Login</button><button class="btn" onclick="showSection('info')">Xem thông tin nổi bật</button></div>
       </div>
       <div class="panel">
-        <h3>Tổng quan hệ thống</h3>
+        <h3>Tổng quan</h3>
         <div class="summary-card">
           <div class="stat"><b id="portalTournamentCount">0</b><span>Giải đấu</span></div>
-          <div class="stat"><b id="portalOpenCount">0</b><span>Đang mở</span></div>
+          <div class="stat"><b id="portalOpenCount">0</b><span>Đang mở đăng ký</span></div>
           <div class="stat"><b id="portalRegCount">0</b><span>Lượt đăng ký</span></div>
           <div class="stat"><b id="portalMatchCount">0</b><span>Trận đấu</span></div>
         </div>
@@ -98,226 +99,77 @@
     </div>
     <div class="panel">
       <div class="itemhead">
-        <div><h2>Giải đấu đã tạo</h2><p class="sub">Bấm vào từng giải để xem chi tiết, đăng ký, lịch thi đấu, kết quả và phần thưởng.</p></div>
-        <button class="btn primary" onclick="showSection('admin')">+ Tạo giải mới</button>
+        <div><h2>Tất cả giải đấu</h2><p class="sub">Bấm vào từng giải mới thấy các tab chi tiết. Quyền tạo/sửa/xóa chỉ hiện với account Admin.</p></div>
+        <button class="btn primary hidden" id="quickCreateBtn" onclick="startCreateTournament()">+ Tạo giải mới</button>
       </div>
       <div id="tournamentCards" class="grid three"></div>
     </div>
   </section>
 
-  <section id="tournament" class="section"><div id="tournamentDetail"></div></section>
-
-  <section id="register" class="section">
-    <div id="registerSelectedBanner"></div>
-    <div class="panel" style="margin-top:18px">
-      <h2>Đăng ký thi đấu</h2>
-      <p class="sub">Không cần tạo mật khẩu. Người chơi đăng ký bằng Email và lần sau chỉ cần nhập Email để đăng nhập tra cứu thông tin.</p>
-      <div id="registerAlert"></div>
-      <form id="registrationForm">
+  <section id="login" class="section">
+    <div class="panel" id="loginBox">
+      <h2>Login</h2>
+      <p class="sub">Người chơi đã đăng ký chỉ cần nhập email. Admin nhập email admin và mật khẩu quản trị.</p>
+      <div id="loginAlert"></div>
+      <form id="loginForm">
         <div class="formgrid">
-          <div><label>Email</label><input required type="email" id="regEmail"></div>
-          <div><label>Họ tên đúng theo đăng ký</label><input required id="regFullName"></div>
-          <div><label>Số điện thoại</label><input id="regPhone"></div>
-          <div><label>Đơn vị / CLB</label><input id="regOrg"></div>
-          <div><label>Nội dung thi đấu</label><select id="regCategory"></select></div>
-          <div><label>Trình độ</label><select id="regLevel"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Open</option></select></div>
-          <div><label>Tên đồng đội nếu đánh đôi</label><input id="regPartner"></div>
-          <div><label>Email đồng đội nếu có</label><input type="email" id="regPartnerEmail"></div>
-          <div class="full"><label>Ghi chú</label><textarea id="regNote"></textarea></div>
+          <div><label>Email</label><input required type="email" id="loginEmail" placeholder="email đã đăng ký hoặc email admin"></div>
+          <div><label>Mật khẩu Admin nếu có</label><input type="password" id="loginPassword" placeholder="Chỉ Admin cần nhập"></div>
         </div>
-        <div class="actions"><button class="btn primary" type="submit">Gửi đăng ký</button><button class="btn" type="reset">Xóa form</button></div>
+        <div class="actions"><button class="btn primary" type="submit">Login</button></div>
       </form>
     </div>
+    <div class="panel hidden" id="loggedBox"></div>
   </section>
 
-  <section id="user" class="section">
-    <div id="userSelectedBanner"></div>
-    <div class="panel" id="userLoginGate" style="margin-top:18px">
-      <h2>Đăng nhập người dùng</h2>
-      <p class="sub">Chọn đúng giải, nhập Email đã đăng ký. Sau khi đăng nhập mới xem thông tin cá nhân, danh sách đã đăng ký và gửi kết quả trận của mình.</p>
-      <div id="userAlert"></div>
-      <form id="userLoginForm">
-        <div class="formgrid">
-          <div class="full"><label>Email đã đăng ký</label><input required type="email" id="loginEmail" placeholder="vd: player@email.com"></div>
-        </div>
-        <div class="actions"><button class="btn primary" type="submit">Đăng nhập</button></div>
-      </form>
-    </div>
-    <div id="userApp" class="hidden" style="margin-top:18px">
-      <div class="grid two">
-        <div class="panel"><div class="itemhead"><h2>Thông tin đăng ký</h2><button class="btn red" onclick="userLogout()">Đăng xuất</button></div><div id="userInfoPanel"></div></div>
-        <div class="panel"><h2>Trận của tôi</h2><p class="sub">Kết quả gửi lên sẽ chờ Admin duyệt.</p><div id="myMatches"></div></div>
-      </div>
-      <div class="panel" style="margin-top:18px">
-        <h2>Danh sách đã đăng ký</h2>
-        <p class="sub">Người chơi sau khi đăng nhập có thể xem danh sách vận động viên/đội đã đăng ký trong giải. Không hiển thị email và số điện thoại của người khác.</p>
-        <div id="playerRegistrationList"></div>
-      </div>
-      <div class="grid two" style="margin-top:18px">
-        <div class="panel"><h2>Lịch / kết quả toàn giải</h2><div id="userAllMatches"></div></div>
-        <div class="panel"><h2>Bảng xếp hạng</h2><div id="userRanking"></div></div>
-      </div>
-    </div>
+  <section id="dashboard" class="section">
+    <div id="dashboardContent"></div>
   </section>
 
-  <section id="admin" class="section">
-    <div id="adminLoginGate" class="panel">
-      <h2>Đăng nhập quản trị</h2>
-      <p class="sub">Admin setup giải đấu, banner, nội dung thi đấu, lệ phí, giải thưởng, lịch thi đấu và duyệt kết quả người chơi gửi. Mật khẩu được kiểm tra qua Supabase, không lưu trong website.</p>
-      <div id="adminAlert"></div>
-      <form id="adminLoginForm">
-        <div class="formgrid"><div><label>Admin Password</label><input required type="password" id="adminPassword" placeholder="Nhập mật khẩu quản trị"></div></div>
-        <div class="actions"><button class="btn primary" type="submit">Đăng nhập Admin</button></div>
-      </form>
-    </div>
-
-    <div id="adminApp" class="hidden">
-      <div class="admin-layout">
-        <aside class="side" id="adminTabs">
-          <button data-pane="setup" class="active">Setup giải đấu</button>
-          <button data-pane="list">Danh sách giải</button>
-          <button data-pane="registrations">Đăng ký</button>
-          <button data-pane="rewards">Giải thưởng</button>
-          <button data-pane="schedule">Lịch & kết quả</button>
-          <button data-pane="approval">Duyệt kết quả</button>
-          <button data-pane="ranking">Thứ hạng</button>
-          <button onclick="adminLogout()">Đăng xuất</button>
-        </aside>
-
-        <div class="grid">
-          <div id="pane-setup" class="panel admin-pane active">
-            <div class="itemhead"><div><h2>Setup giải đấu</h2><p class="sub">Tạo mới hoặc cập nhật giải đang chọn.</p></div><button class="btn" onclick="newTournamentForm()">+ Tạo giải mới</button></div>
-            <form id="tournamentForm">
-              <input type="hidden" id="tourId"><input type="hidden" id="tourBannerData">
-              <div class="formgrid">
-                <div><label>Tên giải đấu</label><input id="tourName" required></div>
-                <div><label>Trạng thái đăng ký</label><select id="tourStatus"><option>Open</option><option>Closed</option><option>Finished</option></select></div>
-                <div><label>Ngày thi đấu</label><input id="tourDate" type="date"></div>
-                <div><label>Địa điểm</label><input id="tourLocation"></div>
-                <div><label>Số tiền lệ phí</label><input id="tourFee" type="number" min="0" value="0"></div>
-                <div><label>Đơn vị tiền</label><select id="tourCurrency"><option>VND</option><option>USD</option></select></div>
-                <div class="full"><label>Nội dung thi đấu</label><div class="category-checks" id="categoryChecks"></div></div>
-                <div><label>Upload banner giải đấu</label><input id="tourBannerInput" type="file" accept="image/*"><p class="mini">Khuyến nghị: 1600 x 600 px, tỷ lệ 8:3, JPG/PNG.</p></div>
-                <div><label>Preview banner</label><div id="tourBannerPreview" class="image-preview">Chưa có banner</div></div>
-                <div class="full"><label>Mô tả giải đấu</label><textarea id="tourDescription"></textarea></div>
-              </div>
-              <div class="actions"><button class="btn primary" type="submit">Lưu giải đấu</button><button class="btn orange" type="button" onclick="setSelectedTournamentFromForm()">Chọn giải này</button></div>
-            </form>
-          </div>
-
-          <div id="pane-list" class="panel admin-pane"><h2>Danh sách giải đấu</h2><div id="adminTournamentList" class="grid two"></div></div>
-
-          <div id="pane-registrations" class="panel admin-pane">
-            <div class="itemhead"><div><h2>Quản lý đăng ký</h2><p class="sub" id="adminRegSub"></p></div><button class="btn" onclick="downloadCSV()">Export CSV</button></div>
-            <div id="adminRegistrationTable" class="tablewrap"></div>
-          </div>
-
-          <div id="pane-rewards" class="panel admin-pane">
-            <h2>Giải thưởng</h2>
-            <form id="rewardForm">
-              <input type="hidden" id="rewardId"><input type="hidden" id="rewardImageData">
-              <div class="formgrid">
-                <div><label>Hạng mục</label><input id="rewardRank" placeholder="VD: Giải nhất"></div>
-                <div><label>Nội dung áp dụng</label><select id="rewardCategory"></select></div>
-                <div><label>Tên phần thưởng</label><input id="rewardTitle"></div>
-                <div><label>Giá trị</label><input id="rewardValue"></div>
-                <div><label>Upload hình ảnh giải thưởng</label><input id="rewardImageInput" type="file" accept="image/*"><p class="mini">Khuyến nghị: 1200 x 900 px, tỷ lệ 4:3, JPG/PNG.</p></div>
-                <div><label>Preview hình ảnh</label><div id="rewardImagePreview" class="image-preview">Chưa có hình ảnh</div></div>
-                <div class="full"><label>Mô tả</label><textarea id="rewardDesc"></textarea></div>
-              </div>
-              <div class="actions"><button class="btn primary" type="submit">Lưu giải thưởng</button><button class="btn" type="button" onclick="clearRewardForm()">Tạo mới</button></div>
-            </form>
-            <div id="rewardList" class="cardlist" style="margin-top:16px"></div>
-          </div>
-
-          <div id="pane-schedule" class="panel admin-pane">
-            <h2>Lịch thi đấu / kết quả chính thức</h2>
-            <div class="warn">Admin là người duy nhất được chỉnh lịch và kết quả chính thức. Người chơi chỉ gửi đề xuất kết quả để Admin duyệt.</div>
-            <div class="actions"><label class="btn">Upload CSV lịch thi đấu<input id="scheduleCsvInput" type="file" accept=".csv" style="display:none"></label><button class="btn" onclick="downloadScheduleTemplate()">Tải file mẫu CSV</button></div>
-            <h3 style="margin-top:18px">Tạo / sửa trận thủ công</h3>
-            <form id="matchForm">
-              <input type="hidden" id="matchId">
-              <div class="formgrid">
-                <div><label>Nội dung</label><select id="matchCategory"></select></div>
-                <div><label>Vòng</label><input id="matchRound"></div>
-                <div><label>Thời gian</label><input id="matchTime" type="datetime-local"></div>
-                <div><label>Sân</label><input id="matchCourt"></div>
-                <div><label>Đội / Người A</label><input id="matchTeamA" required></div>
-                <div><label>Đội / Người B</label><input id="matchTeamB" required></div>
-                <div><label>Điểm A</label><input id="matchScoreA" type="number" min="0"></div>
-                <div><label>Điểm B</label><input id="matchScoreB" type="number" min="0"></div>
-              </div>
-              <div class="actions"><button class="btn primary" type="submit">Lưu trận đấu</button><button class="btn" type="button" onclick="clearMatchForm()">Tạo mới</button></div>
-            </form>
-            <h3 style="margin-top:18px">Danh sách trận</h3><div id="adminMatchList" class="tablewrap"></div>
-          </div>
-
-          <div id="pane-approval" class="panel admin-pane"><h2>Duyệt kết quả người chơi gửi</h2><div id="pendingResultsList" class="cardlist"></div></div>
-
-          <div id="pane-ranking" class="panel admin-pane">
-            <h2>Cập nhật bảng xếp hạng</h2>
-            <form id="rankingForm">
-              <input type="hidden" id="rankId">
-              <div class="formgrid">
-                <div><label>Nội dung</label><select id="rankCategory"></select></div>
-                <div><label>Đội / Người chơi</label><input id="rankTeam" required></div>
-                <div><label>Số trận</label><input id="rankPlayed" type="number" min="0" value="0"></div>
-                <div><label>Thắng</label><input id="rankWin" type="number" min="0" value="0"></div>
-                <div><label>Thua</label><input id="rankLoss" type="number" min="0" value="0"></div>
-                <div><label>Điểm</label><input id="rankPoints" type="number" value="0"></div>
-                <div class="full"><label>Ghi chú</label><input id="rankNote"></div>
-              </div>
-              <div class="actions"><button class="btn primary" type="submit">Lưu thứ hạng</button><button class="btn" type="button" onclick="clearRankingForm()">Tạo mới</button></div>
-            </form>
-            <div id="adminRankingList" class="tablewrap" style="margin-top:16px"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <section id="tournament" class="section">
+    <div id="tournamentDetail"></div>
   </section>
 </main>
 
-<div class="footer wrap">Pickleball Tournament Portal • Netlify + Supabase</div>
+<div class="footer wrap">Pickleball Tournament Portal • Netlify + Supabase • v11 Role-based</div>
 
 <script>
 const CATEGORIES = ["Đôi nam","Đôi nữ","Đôi nam nữ","Đơn nam","Đơn nữ"];
 const SELECTED_TOURNAMENT_KEY = "pb.supabase.selected";
+const SESSION_KEY = "pb.portal.session.v11";
 let sb = null;
 let state = {
   tournaments: [], rewards: [], matches: [], rankings: [], publicStats: [],
   selectedTournamentId: localStorage.getItem(SELECTED_TOURNAMENT_KEY) || "",
-  adminPassword: sessionStorage.getItem("pb.admin.password") || "",
-  user: null,
-  playerRegistrations: [],
-  adminRegistrations: [],
+  activeTab: "overview",
+  session: readSession(),
+  myRegistrations: [],
+  currentRegistrations: [],
   pendingSubmissions: []
 };
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function norm(v){return String(v||"").trim().replace(/\s+/g," ").toLowerCase()}
-function money(n,cur="VND"){return Number(n||0).toLocaleString("vi-VN")+" "+cur}
+function money(n,cur="VND"){return Number(n||0).toLocaleString("vi-VN")+" "+(cur||"VND")}
 function formatDate(v){if(!v)return"Chưa cập nhật";const d=new Date(v);return isNaN(d.getTime())?v:d.toLocaleString("vi-VN",{dateStyle:"medium",timeStyle:String(v).includes("T")?"short":undefined})}
+function formatDateOnly(v){if(!v)return"Chưa cập nhật";const d=new Date(v);return isNaN(d.getTime())?v:d.toLocaleDateString("vi-VN")}
 function setAlert(id,type,msg){const el=document.getElementById(id); if(el) el.innerHTML = msg ? `<div class="${type}">${msg}</div>` : ""}
-function selectedTournament(){return state.tournaments.find(t=>t.id===state.selectedTournamentId)||null}
-function isConfigured(){
-  return window.PB_CONFIG && window.PB_CONFIG.SUPABASE_URL && !window.PB_CONFIG.SUPABASE_URL.includes("PASTE_") && window.PB_CONFIG.SUPABASE_ANON_KEY && !window.PB_CONFIG.SUPABASE_ANON_KEY.includes("PASTE_");
-}
-function initSupabase(){
-  if(!isConfigured()){
-    document.getElementById("configWarning").classList.remove("hidden");
-    return false;
-  }
-  document.getElementById("configWarning").classList.add("hidden");
-  sb = window.supabase.createClient(window.PB_CONFIG.SUPABASE_URL, window.PB_CONFIG.SUPABASE_ANON_KEY);
-  return true;
-}
-async function rpc(name,args={}){
-  const { data, error } = await sb.rpc(name,args);
-  if(error){ console.error(name,error); throw error; }
-  return data;
-}
+function readSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||"null")}catch(e){return null}}
+function saveSession(s){state.session=s; if(s)sessionStorage.setItem(SESSION_KEY,JSON.stringify(s)); else sessionStorage.removeItem(SESSION_KEY)}
+function isAdmin(){return state.session?.role==="admin"}
+function isLogged(){return !!state.session}
+function selectedTournament(){return state.tournaments.find(t=>t.id===state.selectedTournamentId)||state.tournaments[0]||null}
+function tRewards(id=state.selectedTournamentId){return state.rewards.filter(x=>x.tournament_id===id)}
+function tMatches(id=state.selectedTournamentId){return state.matches.filter(x=>x.tournament_id===id)}
+function tRankings(id=state.selectedTournamentId){return state.rankings.filter(x=>x.tournament_id===id)}
+function tStats(id){return state.publicStats.find(x=>x.tournament_id===id)||{registration_count:0,approved_count:0,paid_count:0}}
+function regCount(id){return Number(tStats(id).registration_count||0)}
+function approvedCount(id){return Number(tStats(id).approved_count||0)}
+function isConfigured(){return window.PB_CONFIG && window.PB_CONFIG.SUPABASE_URL && !window.PB_CONFIG.SUPABASE_URL.includes("PASTE_") && window.PB_CONFIG.SUPABASE_ANON_KEY && !window.PB_CONFIG.SUPABASE_ANON_KEY.includes("PASTE_")}
+function initSupabase(){if(!isConfigured()){configWarning.classList.remove("hidden");return false}configWarning.classList.add("hidden");sb=window.supabase.createClient(window.PB_CONFIG.SUPABASE_URL,window.PB_CONFIG.SUPABASE_ANON_KEY);return true}
+async function rpc(name,args={}){const {data,error}=await sb.rpc(name,args);if(error){console.error(name,error);throw error}return data}
 async function loadAll(){
-  if(!sb && !initSupabase()) return;
+  if(!sb && !initSupabase())return;
   try{
     const [tournaments,rewards,matches,rankings] = await Promise.all([
       sb.from("tournaments").select("*").order("created_at",{ascending:false}),
@@ -326,255 +178,209 @@ async function loadAll(){
       sb.from("rankings").select("*").order("points",{ascending:false})
     ]);
     for(const r of [tournaments,rewards,matches,rankings]) if(r.error) throw r.error;
-    state.tournaments = tournaments.data || [];
-    state.rewards = rewards.data || [];
-    state.matches = matches.data || [];
-    state.rankings = rankings.data || [];
-    try{
-      state.publicStats = await rpc("get_public_tournament_stats", {});
-    }catch(statErr){
-      console.warn("Public registration stats not available yet. Run supabase_update_v10.sql.", statErr);
-      state.publicStats = [];
-    }
-    if(state.selectedTournamentId && !state.tournaments.some(t=>t.id===state.selectedTournamentId)){
-      state.selectedTournamentId = "";
-      localStorage.removeItem(SELECTED_TOURNAMENT_KEY);
-    }
+    state.tournaments=tournaments.data||[];state.rewards=rewards.data||[];state.matches=matches.data||[];state.rankings=rankings.data||[];
+    try{state.publicStats=await rpc("get_public_tournament_stats",{})}catch(e){console.warn(e);state.publicStats=[]}
+    if(state.session){await loadMyRegistrations()}
+    if(state.selectedTournamentId && !state.tournaments.some(t=>t.id===state.selectedTournamentId)){state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY)}
     renderAll();
-  }catch(err){
-    document.getElementById("configWarning").classList.remove("hidden");
-    document.getElementById("configWarning").innerHTML = "Lỗi kết nối Supabase: " + esc(err.message || err);
-  }
+  }catch(err){configWarning.classList.remove("hidden");configWarning.innerHTML="Lỗi kết nối Supabase: "+esc(err.message||err)}
 }
-window.loadAll=loadAll;
 
 document.querySelectorAll("#mainNav button").forEach(btn=>btn.addEventListener("click",()=>showSection(btn.dataset.section)));
 function showSection(id){
-  if((id==="register"||id==="user"||id==="tournament") && !selectedTournament()){
-    alert("Vui lòng chọn một giải đấu trước.");
-    id="home";
-  }
   document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   document.querySelectorAll("#mainNav button").forEach(b=>b.classList.toggle("active",b.dataset.section===id));
-  renderAll();
-  window.scrollTo({top:0,behavior:"smooth"});
+  renderAll(); window.scrollTo({top:0,behavior:"smooth"});
 }
 window.showSection=showSection;
+function renderAll(){renderNav();renderInfo();renderList();renderLogin();renderDashboard();renderTournamentDetail()}
+function renderNav(){
+  navDashboard.classList.toggle("hidden",!isLogged());
+  quickCreateBtn.classList.toggle("hidden",!isAdmin());
+}
+function bannerStyle(t){return t?.banner_image?`style="background-image:linear-gradient(120deg,rgba(8,20,40,.30),rgba(8,20,40,.45)),url('${t.banner_image}')"`:""}
+function cardBannerStyle(t){return t?.banner_image?`style="background-image:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.55)),url('${t.banner_image}')"`:""}
 
-function renderAll(){
-  renderHome(); renderTournamentDetail(); renderRegister(); renderUser(); renderAdminState();
+function renderInfo(){
+  const t=selectedTournament();
+  if(!t){featuredInfo.innerHTML=`<div class="panel"><h1>Thông tin giải đấu</h1><p class="sub">Chưa có giải đấu. Admin login để tạo giải đầu tiên.</p><button class="btn primary" onclick="showSection('login')">Login</button></div>`;return}
+  featuredInfo.innerHTML=`
+    <div class="hero-full" ${bannerStyle(t)}>
+      <div class="hero-content">
+        <span class="badge dark">🏓 Pickleball • ${esc(t.status||"Open")}</span>
+        <h1>${esc(t.name)}</h1>
+        <p>${esc(t.description||"")}</p>
+        <div class="meta">
+          <span class="badge dark">📅 Thi đấu: ${esc(t.event_date||"TBC")}</span>
+          <span class="badge dark">⏳ Hạn đăng ký: ${formatDate(t.registration_deadline)}</span>
+          <span class="badge dark">📍 ${esc(t.location||"TBC")}</span>
+          <span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span>
+        </div>
+        <div class="grid four hero-stat" style="margin-top:16px">
+          <div class="stat"><b>${regCount(t.id)}</b><span>Đã đăng ký</span></div>
+          <div class="stat"><b>${(t.categories||[]).length}</b><span>Nội dung</span></div>
+          <div class="stat"><b>${tMatches(t.id).length}</b><span>Trận đấu</span></div>
+          <div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div>
+        </div>
+        <div class="actions"><button class="btn green" onclick="openRegister('${t.id}')">Đăng ký giải này</button><button class="btn" onclick="openTournament('${t.id}')">Xem chi tiết</button></div>
+      </div>
+    </div>`;
 }
-function bannerStyle(t){
-  return t?.banner_image ? `style="background-image:linear-gradient(120deg, rgba(8,20,40,.76), rgba(30,64,175,.56)), url('${t.banner_image}')"` : "";
-}
-function cardBannerStyle(t){
-  return t?.banner_image ? `style="background-image:linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.55)), url('${t.banner_image}')"` : "";
-}
-function tRewards(id=state.selectedTournamentId){return state.rewards.filter(x=>x.tournament_id===id)}
-function tMatches(id=state.selectedTournamentId){return state.matches.filter(x=>x.tournament_id===id)}
-function tRankings(id=state.selectedTournamentId){return state.rankings.filter(x=>x.tournament_id===id)}
-function tStats(id){return state.publicStats.find(x=>x.tournament_id===id) || {registration_count:0, approved_count:0, paid_count:0}}
-function regCount(id){return Number(tStats(id).registration_count || 0)}
-function approvedCount(id){return Number(tStats(id).approved_count || 0)}
-function paidCount(id){return Number(tStats(id).paid_count || 0)}
-function renderHome(){
-  document.getElementById("portalTournamentCount").textContent=state.tournaments.length;
-  document.getElementById("portalOpenCount").textContent=state.tournaments.filter(t=>t.status==="Open").length;
-  document.getElementById("portalRegCount").textContent=state.publicStats.reduce((s,x)=>s+Number(x.registration_count||0),0);
-  document.getElementById("portalMatchCount").textContent=state.matches.length;
-  const target=document.getElementById("tournamentCards");
-  if(!state.tournaments.length){target.innerHTML=`<div class="empty" style="grid-column:1/-1">Chưa có giải đấu nào. Admin đăng nhập để tạo giải đầu tiên.</div>`;return}
-  target.innerHTML=state.tournaments.map(t=>`
+function renderList(){
+  portalTournamentCount.textContent=state.tournaments.length;
+  portalOpenCount.textContent=state.tournaments.filter(t=>t.status==="Open").length;
+  portalRegCount.textContent=state.publicStats.reduce((s,x)=>s+Number(x.registration_count||0),0);
+  portalMatchCount.textContent=state.matches.length;
+  if(!state.tournaments.length){tournamentCards.innerHTML=`<div class="empty" style="grid-column:1/-1">Chưa có giải đấu nào.</div>`;return}
+  tournamentCards.innerHTML=state.tournaments.map(t=>`
     <div class="tournament-card">
-      <div class="card-banner" ${cardBannerStyle(t)}><span class="badge dark">${esc(t.status)}</span><b>${esc(t.name)}</b></div>
+      <div class="card-banner" ${cardBannerStyle(t)}><span class="badge dark">${esc(t.status||"Open")}</span><b>${esc(t.name)}</b></div>
       <div class="card-body">
-        <div class="meta"><span class="badge blue">🏓 Pickleball</span><span class="badge">📅 ${esc(t.event_date||"Chưa cập nhật")}</span><span class="badge">📍 ${esc(t.location||"Chưa cập nhật")}</span></div>
+        <div class="meta"><span class="badge blue">🏓 Pickleball</span><span class="badge">📅 ${esc(t.event_date||"TBC")}</span><span class="badge gold">⏳ Hạn: ${formatDate(t.registration_deadline)}</span></div>
         <div class="mini">${esc((t.categories||[]).join(" • "))}</div>
         <div class="signup-count"><div><span>Đã có</span><br><b>${regCount(t.id)}</b> <span>vận động viên đăng ký</span></div><div class="signup-hot">🔥 Cùng tham gia</div></div>
         <div><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}</div>
-        <div class="mini">${esc(t.description||"")}</div>
         <div class="meta"><span class="badge green">${approvedCount(t.id)} đã duyệt</span><span class="badge orange">${tMatches(t.id).length} trận</span><span class="badge blue">${tRewards(t.id).length} giải thưởng</span></div>
         <div class="actions" style="margin-top:auto"><button class="btn primary" onclick="openTournament('${t.id}')">Vào giải</button><button class="btn green" onclick="openRegister('${t.id}')">Đăng ký</button></div>
       </div>
     </div>`).join("");
 }
-function openTournament(id){state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);showSection("tournament")}
-function openRegister(id){state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);showSection("register")}
-window.openTournament=openTournament; window.openRegister=openRegister;
-function bannerHtml(t,actions=true){
-  if(!t)return`<div class="panel"><div class="empty">Chưa chọn giải đấu.</div></div>`;
-  return `<div class="hero" ${bannerStyle(t)}>
-    <div><span class="badge dark">🏓 Pickleball • ${esc(t.status)}</span><h1>${esc(t.name)}</h1><p>${esc(t.description||"")}</p>
-      <div class="meta"><span class="badge dark">📅 ${esc(t.event_date||"Chưa cập nhật")}</span><span class="badge dark">📍 ${esc(t.location||"Chưa cập nhật")}</span><span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span></div>
-      ${actions?`<div class="actions"><button class="btn green" onclick="showSection('register')">Đăng ký giải này</button><button class="btn" onclick="showSection('user')">Người chơi đăng nhập</button></div>`:""}
-    </div>
-    <div class="hero-card"><h3>Thông tin nhanh</h3><div class="stats"><div class="stat"><b>${regCount(t.id)}</b><span>Đã đăng ký</span></div><div class="stat"><b>${(t.categories||[]).length}</b><span>Nội dung</span></div><div class="stat"><b>${tMatches(t.id).length}</b><span>Trận đấu</span></div><div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div></div></div>
-  </div>`;
-}
-function renderTournamentDetail(){
-  const t=selectedTournament(); const target=document.getElementById("tournamentDetail");
-  if(!t){target.innerHTML=`<div class="panel"><div class="empty">Vui lòng chọn giải đấu từ trang chủ.</div></div>`;return}
-  target.innerHTML=`${bannerHtml(t,true)}
-    <div class="grid two" style="margin-top:18px">
-      <div class="panel"><h2>Nội dung thi đấu</h2><div class="meta">${(t.categories||[]).map(c=>`<span class="badge blue">${esc(c)}</span>`).join("")}</div><div class="item" style="margin-top:14px"><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}<br><span class="mini">Trạng thái: ${esc(t.status)}</span></div></div>
-      <div class="panel"><h2>Giải thưởng</h2>${publicRewardsHtml(t.id)}</div>
-    </div>
-    <div class="grid two" style="margin-top:18px"><div class="panel"><h2>Lịch thi đấu / Kết quả</h2>${publicMatchesHtml(t.id)}</div><div class="panel"><h2>Bảng xếp hạng</h2>${publicRankingsHtml(t.id)}</div></div>`;
-}
-function publicRewardsHtml(tid){const rows=tRewards(tid); if(!rows.length)return`<p class="muted">Chưa cập nhật giải thưởng.</p>`;return`<div class="cardlist">`+rows.map(r=>`<div class="item"><div class="itemhead"><div><b>${esc(r.reward_rank)} - ${esc(r.title)}</b><br><span class="mini">${esc(r.category||"")} • ${esc(r.reward_value||"")}</span></div>${r.image?`<img class="reward-img" src="${r.image}">`:""}</div><div>${esc(r.description||"")}</div></div>`).join("")+`</div>`}
-function publicMatchesHtml(tid){const rows=tMatches(tid); if(!rows.length)return`<p class="muted">Chưa có lịch thi đấu.</p>`;return`<div class="cardlist">`+rows.map(m=>`<div class="item"><div class="itemhead"><b>${esc(m.team_a)} vs ${esc(m.team_b)}</b><span class="badge ${m.score_a!==null&&m.score_b!==null?"green":"orange"}">${m.score_a!==null&&m.score_b!==null?esc(m.score_a)+" - "+esc(m.score_b):"Sắp đấu"}</span></div><div class="mini">${esc(m.category||"")} • ${esc(m.match_round||"")} • ${formatDate(m.match_time)} • ${esc(m.court||"")}</div></div>`).join("")+`</div>`}
-function publicRankingsHtml(tid){const rows=tRankings(tid); if(!rows.length)return`<p class="muted">Chưa có bảng xếp hạng.</p>`;return`<div class="tablewrap"><table><thead><tr><th>#</th><th>Đội / Người</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>Điểm</th></tr></thead><tbody>`+rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.team)}</b><br><span class="mini">${esc(r.category||"")}</span></td><td>${r.played}</td><td>${r.win}</td><td>${r.loss}</td><td><b>${r.points}</b></td></tr>`).join("")+`</tbody></table></div>`}
-function renderRegister(){
-  const t=selectedTournament(); document.getElementById("registerSelectedBanner").innerHTML=t?bannerHtml(t,false):`<div class="panel"><div class="empty">Vui lòng chọn giải đấu trước.</div></div>`;
-  document.getElementById("regCategory").innerHTML=(t?.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("");
-}
-document.getElementById("registrationForm").addEventListener("submit",async e=>{
-  e.preventDefault(); const t=selectedTournament(); if(!t)return;
-  if(t.status!=="Open"){setAlert("registerAlert","danger","Giải đấu hiện không mở đăng ký.");return}
-  const payload={tournament_id:t.id,email:regEmail.value.trim(),full_name:regFullName.value.trim(),phone:regPhone.value.trim(),organization:regOrg.value.trim(),category:regCategory.value,level:regLevel.value,partner_name:regPartner.value.trim(),partner_email:regPartnerEmail.value.trim(),note:regNote.value.trim()};
-  const {error}=await sb.from("registrations").insert(payload);
-  if(error){setAlert("registerAlert","danger",error.message.includes("duplicate")?"Email hoặc Họ tên đã tồn tại trong giải này.":error.message);return}
-  e.target.reset(); setAlert("registerAlert","notice","Đăng ký thành công. Bạn có thể đăng nhập bằng Email + Họ tên để tra cứu."); await loadAll();
-});
+function openTournament(id){state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);state.activeTab="overview";showSection("tournament")}
+function openRegister(id){state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);state.activeTab="register";showSection("tournament")}
+function startCreateTournament(){state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY);state.activeTab="admin_setup";showSection("tournament")}
+window.openTournament=openTournament;window.openRegister=openRegister;window.startCreateTournament=startCreateTournament;
 
-function renderUser(){
-  const t=selectedTournament(); document.getElementById("userSelectedBanner").innerHTML=t?bannerHtml(t,false):`<div class="panel"><div class="empty">Vui lòng chọn giải đấu trước.</div></div>`;
-  const valid=state.user && t && state.user.tournament_id===t.id;
-  document.getElementById("userLoginGate").classList.toggle("hidden",!!valid);
-  document.getElementById("userApp").classList.toggle("hidden",!valid);
-  if(valid) renderUserInfo(t,state.user);
-}
-document.getElementById("userLoginForm").addEventListener("submit",async e=>{
-  e.preventDefault(); const t=selectedTournament(); if(!t)return;
-  const email = loginEmail.value.trim();
+loginForm.addEventListener("submit",async e=>{
+  e.preventDefault(); setAlert("loginAlert","","");
   try{
-    const rows=await rpc("get_registration_by_email",{p_tournament_id:t.id,p_email:email});
-    if(!rows || !rows.length){setAlert("userAlert","danger","Không tìm thấy đăng ký bằng email này trong giải đã chọn.");return}
-    state.user=rows[0];
-    state.playerRegistrations=await rpc("list_registrations_for_player",{p_tournament_id:t.id,p_email:email});
-    setAlert("userAlert","",""); renderUser();
-  }catch(err){setAlert("userAlert","danger",err.message||err)}
+    const rows=await rpc("portal_login",{p_email:loginEmail.value.trim(),p_password:loginPassword.value});
+    if(!rows || !rows.length){setAlert("loginAlert","danger","Không tìm thấy account hoặc email chưa đăng ký.");return}
+    const u=rows[0];
+    saveSession({email:u.email,full_name:u.full_name,role:u.role,adminPassword:u.role==="admin"?loginPassword.value:""});
+    loginPassword.value="";
+    await loadMyRegistrations();
+    renderAll();
+    showSection("dashboard");
+  }catch(err){setAlert("loginAlert","danger",err.message||err)}
 });
-function userLogout(){state.user=null;state.playerRegistrations=[];renderUser()} window.userLogout=userLogout;
-function isMyMatch(m,reg){const hay=norm([m.team_a,m.team_b].join(" ")); return hay.includes(norm(reg.full_name)) || (reg.partner_name && hay.includes(norm(reg.partner_name)))}
-function renderUserInfo(t,reg){
-  document.getElementById("userInfoPanel").innerHTML=`<div class="cardlist"><div class="item"><b>Họ tên:</b> ${esc(reg.full_name)}</div><div class="item"><b>Email:</b> ${esc(reg.email)}</div><div class="item"><b>Nội dung:</b> ${esc(reg.category)}</div><div class="item"><b>Đồng đội:</b> ${esc(reg.partner_name||"Không có")}</div><div class="item"><b>Trạng thái:</b> <span class="badge ${reg.status==="Approved"?"green":reg.status==="Rejected"?"red":"orange"}">${esc(reg.status)}</span> <span class="badge ${reg.payment_status==="Paid"?"green":"orange"}">${esc(reg.payment_status)}</span></div></div>`;
-  renderPlayerRegistrationList();
-  const my=tMatches(t.id).filter(m=>isMyMatch(m,reg));
-  document.getElementById("myMatches").innerHTML=my.length?`<div class="cardlist">`+my.map(m=>`<div class="item"><div class="itemhead"><b>${esc(m.team_a)} vs ${esc(m.team_b)}</b><span class="badge blue">${esc(m.match_round||"")}</span></div><div class="mini">${esc(m.category||"")} • ${formatDate(m.match_time)} • ${esc(m.court||"")}</div><div><b>Điểm chính thức:</b> ${m.score_a!==null&&m.score_b!==null?esc(m.score_a)+" - "+esc(m.score_b):"Chưa cập nhật"}</div><form onsubmit="submitPlayerResult(event,'${m.id}')"><div class="formgrid" style="margin-top:10px"><div><label>Điểm A</label><input required type="number" min="0" name="scoreA"></div><div><label>Điểm B</label><input required type="number" min="0" name="scoreB"></div><div class="full"><label>Ghi chú</label><input name="note"></div></div><div class="actions"><button class="btn orange" type="submit">Gửi kết quả cho Admin duyệt</button></div></form></div>`).join("")+`</div>`:`<p class="muted">Chưa có trận nào khớp với tên bạn hoặc đồng đội.</p>`;
-  document.getElementById("userAllMatches").innerHTML=publicMatchesHtml(t.id);
-  document.getElementById("userRanking").innerHTML=publicRankingsHtml(t.id);
+async function loadMyRegistrations(){
+  if(!state.session){state.myRegistrations=[];return}
+  try{state.myRegistrations=await rpc("get_my_registrations",{p_email:state.session.email})}catch(e){console.warn(e);state.myRegistrations=[]}
 }
-function renderPlayerRegistrationList(){
-  const target=document.getElementById("playerRegistrationList");
-  if(!target) return;
-  const rows=state.playerRegistrations||[];
-  if(!rows.length){
-    target.innerHTML=`<p class="muted">Chưa có danh sách đăng ký hoặc chưa tải được dữ liệu.</p>`;
-    return;
+function logout(){saveSession(null);state.myRegistrations=[];state.currentRegistrations=[];renderAll();showSection("login")}
+window.logout=logout;
+function renderLogin(){
+  loginBox.classList.toggle("hidden",isLogged());
+  loggedBox.classList.toggle("hidden",!isLogged());
+  if(isLogged()){
+    loggedBox.innerHTML=`<div class="rolebar"><div><h2>Đã login</h2><p class="sub">${esc(state.session.full_name||state.session.email)} • <span class="rolechip">${esc(state.session.role)}</span></p></div><button class="btn red" onclick="logout()">Logout</button></div>
+    <div class="actions"><button class="btn primary" onclick="showSection('dashboard')">Vào Dashboard</button>${isAdmin()?`<button class="btn green" onclick="startCreateTournament()">Tạo giải mới</button>`:""}</div>`;
   }
-  target.innerHTML=`<div class="tablewrap"><table><thead><tr><th>#</th><th>Vận động viên</th><th>Liên hệ</th><th>Nội dung</th><th>Đồng đội</th><th>Trạng thái</th><th>Thanh toán</th><th>Ghi chú</th></tr></thead><tbody>`+
-    rows.map((r,i)=>`<tr>
-      <td>${i+1}</td>
-      <td><b>${esc(r.full_name)}</b>${r.organization?`<br><span class="mini">${esc(r.organization)}</span>`:""}</td>
-      <td>${r.email?`<b>Email:</b> ${esc(r.email)}<br>`:""}${r.phone?`<b>Phone:</b> ${esc(r.phone)}`:""}</td>
-      <td>${esc(r.category||"")}<br><span class="mini">${esc(r.level||"")}</span></td>
-      <td>${esc(r.partner_name||"-")}${r.partner_email?`<br><span class="mini">${esc(r.partner_email)}</span>`:""}</td>
-      <td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td>
-      <td><span class="badge ${r.payment_status==="Paid"?"green":"orange"}">${esc(r.payment_status||"Unpaid")}</span></td>
-      <td>${esc(r.note||"")}</td>
-    </tr>`).join("")+
-    `</tbody></table></div>`;
+}
+function renderDashboard(){
+  if(!isLogged()){dashboardContent.innerHTML=`<div class="panel"><h2>Dashboard</h2><p class="sub">Vui lòng login để xem dashboard.</p><button class="btn primary" onclick="showSection('login')">Login</button></div>`;return}
+  const totalRegs=state.publicStats.reduce((s,x)=>s+Number(x.registration_count||0),0);
+  const adminBlock=isAdmin()?`
+    <div class="panel" style="margin-top:18px"><h2>Admin nhanh</h2>
+      <div class="actions"><button class="btn green" onclick="startCreateTournament()">+ Tạo giải mới</button><button class="btn" onclick="showSection('list')">Quản lý từng giải</button></div>
+    </div>`:"";
+  const myRows=state.myRegistrations||[];
+  dashboardContent.innerHTML=`<div class="panel"><div class="rolebar"><div><h2>Dashboard</h2><p class="sub">Xin chào ${esc(state.session.full_name||state.session.email)}.</p></div><button class="btn red" onclick="logout()">Logout</button></div>
+    <div class="grid four">
+      <div class="stat"><b>${state.tournaments.length}</b><span>Giải đấu</span></div>
+      <div class="stat"><b>${totalRegs}</b><span>Lượt đăng ký</span></div>
+      <div class="stat"><b>${state.matches.length}</b><span>Trận đấu</span></div>
+      <div class="stat"><b>${state.session.role}</b><span>Vai trò</span></div>
+    </div></div>
+    <div class="panel" style="margin-top:18px"><h2>Giải đã đăng ký</h2>${myRows.length?myRegisteredTable(myRows):`<p class="muted">Email này chưa có đăng ký nào hoặc chỉ là tài khoản Admin.</p>`}</div>
+    ${adminBlock}`;
+}
+function myRegisteredTable(rows){
+  return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Giải</th><th>Nội dung</th><th>Người chơi</th><th>Trạng thái</th><th></th></tr></thead><tbody>`+
+    rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.tournament_name)}</b><br><span class="mini">${formatDate(r.event_date)} • ${esc(r.location||"")}</span></td><td>${esc(r.category||"")}</td><td>${esc(r.full_name)}${r.partner_name?`<br><span class="mini">Đồng đội: ${esc(r.partner_name)}</span>`:""}</td><td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td><td><button class="btn" onclick="openTournament('${r.tournament_id}')">Vào giải</button></td></tr>`).join("")+`</tbody></table></div>`;
 }
 
-async function submitPlayerResult(e,matchId){
-  e.preventDefault(); const t=selectedTournament(); const reg=state.user; const match=tMatches(t.id).find(m=>m.id===matchId); if(!match||!isMyMatch(match,reg))return alert("Bạn chỉ được gửi kết quả cho trận của mình.");
-  const fd=new FormData(e.target);
-  const {error}=await sb.from("result_submissions").insert({tournament_id:t.id,match_id:matchId,submitted_by:reg.full_name,submitted_email:reg.email,score_a:Number(fd.get("scoreA")),score_b:Number(fd.get("scoreB")),note:fd.get("note")||""});
-  if(error)return alert(error.message);
-  e.target.reset(); alert("Đã gửi kết quả. Vui lòng chờ Admin duyệt.");
+function renderTournamentDetail(){
+  const t=state.selectedTournamentId?state.tournaments.find(x=>x.id===state.selectedTournamentId):null;
+  if(!t && state.activeTab!=="admin_setup"){tournamentDetail.innerHTML=`<div class="panel"><div class="empty">Vui lòng chọn giải từ danh sách.</div></div>`;return}
+  const canAdmin=isAdmin();
+  const tabs=[
+    ["overview","Thông tin"],
+    ["register","Đăng ký"],
+    ["registrations","Danh sách đăng ký"],
+    ["schedule","Lịch/Kết quả"],
+    ["rewards","Giải thưởng"],
+    ["report","Báo cáo"]
+  ];
+  if(canAdmin){tabs.push(["admin_setup",t?"Setup":"Tạo giải"]); if(t){tabs.push(["admin_regs","Quản lý đăng ký"],["admin_schedule","Quản lý lịch"],["admin_rewards","Quản lý thưởng"],["admin_ranking","Thứ hạng"])}}
+  tournamentDetail.innerHTML=`
+    ${t?heroMini(t):""}
+    <div class="tabs">${tabs.map(([id,label])=>`<button class="${state.activeTab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}</div>
+    <div id="tabContent"></div>`;
+  renderTabContent();
 }
-window.submitPlayerResult=submitPlayerResult;
-
-document.getElementById("adminLoginForm").addEventListener("submit",async e=>{
-  e.preventDefault();
-  try{
-    const ok=await rpc("verify_admin_password",{p_password:adminPassword.value});
-    if(ok){state.adminPassword=adminPassword.value;sessionStorage.setItem("pb.admin.password",state.adminPassword);adminPassword.value="";await loadAdminData();renderAdminState();}
-    else setAlert("adminAlert","danger","Sai mật khẩu Admin.");
-  }catch(err){setAlert("adminAlert","danger",err.message||err)}
-});
-function adminLogout(){state.adminPassword="";sessionStorage.removeItem("pb.admin.password");renderAdminState()} window.adminLogout=adminLogout;
-document.querySelectorAll("#adminTabs button[data-pane]").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll("#adminTabs button[data-pane]").forEach(b=>b.classList.remove("active"));btn.classList.add("active");document.querySelectorAll(".admin-pane").forEach(p=>p.classList.remove("active"));document.getElementById("pane-"+btn.dataset.pane).classList.add("active");renderAdmin()}));
-async function loadAdminData(){
-  const t=selectedTournament();
-  if(!state.adminPassword||!t){state.adminRegistrations=[];state.pendingSubmissions=[];return}
-  try{
-    state.adminRegistrations=await rpc("admin_list_registrations",{p_password:state.adminPassword,p_tournament_id:t.id});
-    state.pendingSubmissions=await rpc("admin_list_pending_results",{p_password:state.adminPassword,p_tournament_id:t.id});
-  }catch(err){console.error(err)}
+function setTab(id){state.activeTab=id;renderTournamentDetail();if(id==="registrations"||id==="admin_regs"||id==="report")loadCurrentRegistrations()}
+window.setTab=setTab;
+function heroMini(t){return `<div class="hero-full" ${bannerStyle(t)} style="min-height:380px"><div class="hero-content"><span class="badge dark">${esc(t.status||"Open")}</span><h1>${esc(t.name)}</h1><div class="meta"><span class="badge dark">📅 ${esc(t.event_date||"TBC")}</span><span class="badge dark">⏳ Hạn đăng ký: ${formatDate(t.registration_deadline)}</span><span class="badge dark">💰 ${money(t.entry_fee,t.currency)}</span></div></div></div>`}
+function renderTabContent(){
+  const t=state.selectedTournamentId?state.tournaments.find(x=>x.id===state.selectedTournamentId):null;
+  const el=document.getElementById("tabContent"); if(!el)return;
+  if(state.activeTab==="overview" && t) el.innerHTML=overviewHtml(t);
+  else if(state.activeTab==="register" && t) el.innerHTML=registerHtml(t);
+  else if(state.activeTab==="registrations" && t) {el.innerHTML=registrationListHtml(); loadCurrentRegistrations();}
+  else if(state.activeTab==="schedule" && t) el.innerHTML=`<div class="panel"><h2>Lịch thi đấu / Kết quả</h2>${publicMatchesHtml(t.id)}</div>`;
+  else if(state.activeTab==="rewards" && t) el.innerHTML=`<div class="panel"><h2>Giải thưởng</h2>${publicRewardsHtml(t.id)}</div>`;
+  else if(state.activeTab==="report" && t) {el.innerHTML=reportHtml(t); loadCurrentRegistrations();}
+  else if(state.activeTab==="admin_setup" && isAdmin()) el.innerHTML=adminSetupHtml(t);
+  else if(state.activeTab==="admin_regs" && t && isAdmin()) {el.innerHTML=adminRegsHtml(); loadCurrentRegistrations(true);}
+  else if(state.activeTab==="admin_schedule" && t && isAdmin()) el.innerHTML=adminScheduleHtml(t);
+  else if(state.activeTab==="admin_rewards" && t && isAdmin()) el.innerHTML=adminRewardsHtml(t);
+  else if(state.activeTab==="admin_ranking" && t && isAdmin()) el.innerHTML=adminRankingHtml(t);
+  else el.innerHTML=`<div class="panel"><div class="empty">Không có quyền hoặc chưa chọn giải.</div></div>`;
+  bindDynamicForms();
 }
-function renderAdminState(){
-  const logged=!!state.adminPassword;
-  document.getElementById("adminLoginGate").classList.toggle("hidden",logged);
-  document.getElementById("adminApp").classList.toggle("hidden",!logged);
-  if(logged) renderAdmin();
+function overviewHtml(t){return `<div class="grid two"><div class="panel"><h2>Thông tin giải đấu</h2><div class="cardlist"><div class="item"><b>Tên giải:</b> ${esc(t.name)}</div><div class="item"><b>Thời gian:</b> ${esc(t.event_date||"TBC")}</div><div class="item"><b>Hạn đăng ký:</b> ${formatDate(t.registration_deadline)}</div><div class="item"><b>Địa điểm:</b> ${esc(t.location||"TBC")}</div><div class="item"><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}</div></div></div><div class="panel"><h2>Nội dung thi đấu</h2><div class="meta">${(t.categories||[]).map(c=>`<span class="badge blue">${esc(c)}</span>`).join("")}</div><div class="notice" style="margin-top:14px">Số lượng đăng ký hiện tại: <b>${regCount(t.id)}</b> vận động viên.</div><p>${esc(t.description||"")}</p></div></div>`}
+function isRegistrationOpen(t){if(t.status!=="Open")return false;if(t.registration_deadline && new Date(t.registration_deadline).getTime()<Date.now())return false;return true}
+function registerHtml(t){const open=isRegistrationOpen(t);return `<div class="panel"><h2>Đăng ký giải</h2>${open?`<p class="sub">Hạn đăng ký: ${formatDate(t.registration_deadline)}</p>`:`<div class="warn">Giải đã đóng đăng ký hoặc quá hạn.</div>`}<form id="registrationForm" class="${open?"":"hidden"}"><div class="formgrid"><div><label>Email</label><input required type="email" id="regEmail" value="${esc(state.session?.email||"")}"></div><div><label>Họ tên</label><input required id="regFullName"></div><div><label>Số điện thoại</label><input id="regPhone"></div><div><label>Đơn vị/CLB</label><input id="regOrg"></div><div><label>Nội dung</label><select id="regCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div><div><label>Trình độ</label><select id="regLevel"><option>Beginner</option><option>Intermediate</option><option>Advanced</option><option>Open</option></select></div><div><label>Đồng đội</label><input id="regPartner"></div><div><label>Email đồng đội</label><input type="email" id="regPartnerEmail"></div><div class="full"><label>Ghi chú</label><textarea id="regNote"></textarea></div></div><div class="actions"><button class="btn primary" type="submit">Gửi đăng ký</button></div></form></div>`}
+async function submitRegistration(e){e.preventDefault();const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);if(!isRegistrationOpen(t)){alert("Giải đã đóng đăng ký.");return}const row={tournament_id:t.id,email:regEmail.value.trim(),full_name:regFullName.value.trim(),phone:regPhone.value.trim(),organization:regOrg.value.trim(),category:regCategory.value,level:regLevel.value,partner_name:regPartner.value.trim(),partner_email:regPartnerEmail.value.trim(),note:regNote.value.trim(),status:"Pending",payment_status:"Unpaid"};const {error}=await sb.from("registrations").insert(row);if(error){alert(error.message);return}alert("Đăng ký thành công.");await loadAll();state.activeTab="registrations";renderTournamentDetail()}
+function registrationListHtml(){if(!isLogged())return `<div class="panel"><h2>Danh sách đăng ký</h2><div class="warn">Vui lòng login bằng email đã đăng ký để xem danh sách đăng ký.</div><button class="btn primary" onclick="showSection('login')">Login</button></div>`;return `<div class="panel"><h2>Danh sách đã đăng ký</h2><p class="sub">Người chơi đã login có thể xem thông tin đăng ký trong giải này.</p><div id="registrationListBox"><p class="muted">Đang tải...</p></div></div>`}
+async function loadCurrentRegistrations(admin=false){const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);if(!t||!isLogged())return;try{state.currentRegistrations=admin?await rpc("admin_list_registrations",{p_password:state.session.adminPassword,p_tournament_id:t.id}):await rpc("list_registrations_for_player",{p_email:state.session.email,p_tournament_id:t.id});if(document.getElementById("registrationListBox"))document.getElementById("registrationListBox").innerHTML=registrationsTable(state.currentRegistrations,false);if(document.getElementById("adminRegistrationTable"))document.getElementById("adminRegistrationTable").innerHTML=registrationsTable(state.currentRegistrations,true);if(document.getElementById("reportRegistrationBox"))renderReportTables(t)}catch(e){if(document.getElementById("registrationListBox"))registrationListBox.innerHTML=`<div class="danger">${esc(e.message||e)}</div>`}}
+function registrationsTable(rows,admin=false){if(!rows.length)return`<p class="muted">Chưa có đăng ký.</p>`;return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Vận động viên</th><th>Liên hệ</th><th>Nội dung</th><th>Đồng đội</th><th>Trạng thái</th><th>Thanh toán</th>${admin?`<th>Action</th>`:""}</tr></thead><tbody>`+rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.full_name)}</b><br><span class="mini">${esc(r.organization||"")}</span></td><td><b>Email:</b> ${esc(r.email||"")}<br><b>Phone:</b> ${esc(r.phone||"")}</td><td>${esc(r.category||"")}<br><span class="mini">${esc(r.level||"")}</span></td><td>${esc(r.partner_name||"-")}<br><span class="mini">${esc(r.partner_email||"")}</span></td><td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td><td><span class="badge ${r.payment_status==="Paid"?"green":"orange"}">${esc(r.payment_status||"Unpaid")}</span></td>${admin?`<td><button class="btn green" onclick="updateReg('${r.id}','Approved','${r.payment_status||"Unpaid"}')">Duyệt</button> <button class="btn orange" onclick="updateReg('${r.id}','${r.status||"Pending"}','Paid')">Paid</button> <button class="btn red" onclick="deleteReg('${r.id}')">Xóa</button></td>`:""}</tr>`).join("")+`</tbody></table></div>`}
+function publicMatchesHtml(tid){const rows=tMatches(tid);if(!rows.length)return`<p class="muted">Chưa có lịch thi đấu.</p>`;return`<div class="cardlist">`+rows.map(m=>`<div class="item"><div class="itemhead"><b>${esc(m.team_a)} vs ${esc(m.team_b)}</b><span class="badge ${m.score_a!==null&&m.score_b!==null?"green":"orange"}">${m.score_a!==null&&m.score_b!==null?esc(m.score_a)+" - "+esc(m.score_b):"Sắp đấu"}</span></div><div class="mini">${esc(m.category||"")} • ${esc(m.match_round||"")} • ${formatDate(m.match_time)} • ${esc(m.court||"")}</div></div>`).join("")+`</div>`}
+function publicRewardsHtml(tid){const rows=tRewards(tid);if(!rows.length)return`<p class="muted">Chưa cập nhật giải thưởng.</p>`;return`<div class="cardlist">`+rows.map(r=>`<div class="item"><div class="itemhead"><div><b>${esc(r.reward_rank)} - ${esc(r.title)}</b><br><span class="mini">${esc(r.category||"")} • ${esc(r.reward_value||"")}</span></div>${r.image?`<img class="reward-img" src="${r.image}">`:""}</div><div>${esc(r.description||"")}</div></div>`).join("")+`</div>`}
+function reportHtml(t){return `<div class="panel"><h2>Báo cáo / Dashboard giải</h2><div class="grid four"><div class="stat"><b>${regCount(t.id)}</b><span>Đăng ký</span></div><div class="stat"><b>${approvedCount(t.id)}</b><span>Đã duyệt</span></div><div class="stat"><b>${tMatches(t.id).length}</b><span>Trận</span></div><div class="stat"><b>${tRewards(t.id).length}</b><span>Giải thưởng</span></div></div><div id="reportRegistrationBox" style="margin-top:18px"></div></div>`}
+function renderReportTables(t){const rows=state.currentRegistrations||[];const byCat={};rows.forEach(r=>byCat[r.category||"Khác"]=(byCat[r.category||"Khác"]||0)+1);reportRegistrationBox.innerHTML=`<h3>Đăng ký theo nội dung</h3><div class="grid three">`+Object.entries(byCat).map(([k,v])=>`<div class="item"><b>${esc(k)}</b><br><span class="mini">${v} vận động viên</span></div>`).join("")+`</div>`}
+
+function adminSetupHtml(t){
+  const cats=new Set(t?.categories||["Đôi nam","Đôi nữ","Đôi nam nữ"]);
+  return `<div class="panel"><h2>${t?"Setup giải đấu":"Tạo giải mới"}</h2><form id="tournamentForm"><input type="hidden" id="tourId" value="${esc(t?.id||"")}"><input type="hidden" id="tourBannerData" value="${esc(t?.banner_image||"")}"><div class="formgrid"><div><label>Tên giải</label><input required id="tourName" value="${esc(t?.name||"")}"></div><div><label>Trạng thái</label><select id="tourStatus">${["Open","Closed","Finished"].map(x=>`<option ${t?.status===x?"selected":""}>${x}</option>`).join("")}</select></div><div><label>Thời gian thi đấu</label><input id="tourDate" value="${esc(t?.event_date||"")}" placeholder="8:00 20-Jun-2026"></div><div><label>Hạn chót đăng ký</label><input id="tourDeadline" type="datetime-local" value="${t?.registration_deadline?String(t.registration_deadline).slice(0,16):""}"></div><div><label>Địa điểm</label><input id="tourLocation" value="${esc(t?.location||"")}"></div><div><label>Lệ phí</label><input id="tourFee" type="number" value="${esc(t?.entry_fee||0)}"></div><div><label>Tiền tệ</label><select id="tourCurrency"><option ${t?.currency==="VND"?"selected":""}>VND</option><option ${t?.currency==="USD"?"selected":""}>USD</option></select></div><div><label>Upload banner lớn</label><input id="tourBannerInput" type="file" accept="image/*"><p class="mini">Có thể dùng ảnh dạng trang báo/bannner lớn. Khuyến nghị 1600x600 hoặc 1055x1491 nếu muốn full-page.</p></div><div class="full"><label>Nội dung thi đấu</label><div class="category-checks">${CATEGORIES.map(c=>`<label class="check"><input type="checkbox" name="tourCategory" value="${esc(c)}" ${cats.has(c)?"checked":""}> ${esc(c)}</label>`).join("")}</div></div><div class="full"><label>Mô tả</label><textarea id="tourDescription">${esc(t?.description||"")}</textarea></div></div><div class="actions"><button class="btn primary" type="submit">Lưu</button>${t?`<button class="btn red" type="button" onclick="deleteTournament('${t.id}')">Xóa giải</button>`:""}</div></form></div>`;
 }
-function renderAdmin(){renderCategoryChecks();renderAdminTournamentForm();renderAdminTournamentList();renderAdminRegistrations();renderAdminSelectOptions();renderRewardAdmin();renderMatchAdmin();renderApprovalAdmin();renderRankingAdmin();}
-function renderCategoryChecks(){const t=selectedTournament();const selected=new Set(t?.categories||["Đôi nam","Đôi nữ","Đôi nam nữ"]);document.getElementById("categoryChecks").innerHTML=CATEGORIES.map(c=>`<label class="check"><input type="checkbox" name="tourCategory" value="${esc(c)}" ${selected.has(c)?"checked":""}> ${esc(c)}</label>`).join("")}
-function setImagePreview(id,data,empty){document.getElementById(id).innerHTML=data?`<img src="${data}">`:empty}
-function readImage(file,cb){const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(file)}
-tourBannerInput.addEventListener("change",e=>{const f=e.target.files[0];if(f)readImage(f,d=>{tourBannerData.value=d;setImagePreview("tourBannerPreview",d,"Chưa có banner")})});
-rewardImageInput.addEventListener("change",e=>{const f=e.target.files[0];if(f)readImage(f,d=>{rewardImageData.value=d;setImagePreview("rewardImagePreview",d,"Chưa có hình ảnh")})});
-function renderAdminTournamentForm(){const t=selectedTournament();if(!t){newTournamentForm(false);return}tourId.value=t.id;tourName.value=t.name||"";tourStatus.value=t.status||"Open";tourDate.value=t.event_date||"";tourLocation.value=t.location||"";tourFee.value=t.entry_fee||0;tourCurrency.value=t.currency||"VND";tourDescription.value=t.description||"";tourBannerData.value=t.banner_image||"";setImagePreview("tourBannerPreview",t.banner_image,"Chưa có banner")}
-function newTournamentForm(clear=true){if(clear){state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY)}tourId.value="";tourName.value="Giải Pickleball mới";tourStatus.value="Open";tourDate.value="";tourLocation.value="";tourFee.value=0;tourCurrency.value="VND";tourDescription.value="";tourBannerData.value="";setImagePreview("tourBannerPreview","","Chưa có banner");renderCategoryChecks()} window.newTournamentForm=newTournamentForm;
-function setSelectedTournamentFromForm(){if(tourId.value){state.selectedTournamentId=tourId.value;localStorage.setItem(SELECTED_TOURNAMENT_KEY,tourId.value);renderAll();alert("Đã chọn giải này.")}else alert("Vui lòng lưu giải trước.")} window.setSelectedTournamentFromForm=setSelectedTournamentFromForm;
-tournamentForm.addEventListener("submit",async e=>{
-  e.preventDefault(); const categories=[...document.querySelectorAll('input[name="tourCategory"]:checked')].map(x=>x.value); if(!categories.length)return alert("Chọn ít nhất 1 nội dung thi đấu.");
-  const data={id:tourId.value||null,name:tourName.value.trim(),status:tourStatus.value,event_date:tourDate.value,location:tourLocation.value.trim(),categories,entry_fee:Number(tourFee.value||0),currency:tourCurrency.value,banner_image:tourBannerData.value,description:tourDescription.value.trim()};
-  try{const id=await rpc("admin_upsert_tournament",{p_password:state.adminPassword,p_data:data});state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);await loadAll();await loadAdminData();alert("Đã lưu giải đấu.");}
-  catch(err){alert(err.message||err)}
-});
-function renderAdminTournamentList(){const target=adminTournamentList;if(!state.tournaments.length){target.innerHTML=`<div class="empty" style="grid-column:1/-1">Chưa có giải đấu.</div>`;return}target.innerHTML=state.tournaments.map(t=>`<div class="tournament-card"><div class="card-banner" ${cardBannerStyle(t)}><span class="badge dark">${esc(t.status)}</span><b>${esc(t.name)}</b></div><div class="card-body"><div class="mini">${esc((t.categories||[]).join(" • "))}</div><div><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}</div><div class="actions"><button class="btn primary" onclick="selectAdminTournament('${t.id}')">Quản lý</button><button class="btn" onclick="editAdminTournament('${t.id}')">Sửa setup</button><button class="btn red" onclick="deleteTournament('${t.id}')">Xóa</button></div></div></div>`).join("")}
-async function selectAdminTournament(id){state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);await loadAdminData();renderAll();alert("Đã chọn giải để quản lý.")}
-function editAdminTournament(id){selectAdminTournament(id);document.querySelector('#adminTabs button[data-pane="setup"]').click()} 
-async function deleteTournament(id){if(!confirm("Xóa giải đấu này và toàn bộ dữ liệu bên trong?"))return;await rpc("admin_delete_tournament",{p_password:state.adminPassword,p_tournament_id:id});if(state.selectedTournamentId===id){state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY)}await loadAll();renderAll()}
-window.selectAdminTournament=selectAdminTournament;window.editAdminTournament=editAdminTournament;window.deleteTournament=deleteTournament;
+function adminRegsHtml(){return `<div class="panel"><h2>Quản lý đăng ký</h2><div id="adminRegistrationTable"><p class="muted">Đang tải...</p></div></div>`}
+function adminScheduleHtml(t){return `<div class="panel"><h2>Quản lý lịch / kết quả</h2><form id="matchForm"><div class="formgrid"><div><label>Nội dung</label><select id="matchCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div><div><label>Vòng</label><input id="matchRound"></div><div><label>Thời gian</label><input id="matchTime" type="datetime-local"></div><div><label>Sân</label><input id="matchCourt"></div><div><label>Đội A</label><input id="matchTeamA" required></div><div><label>Đội B</label><input id="matchTeamB" required></div><div><label>Điểm A</label><input id="matchScoreA" type="number"></div><div><label>Điểm B</label><input id="matchScoreB" type="number"></div></div><div class="actions"><button class="btn primary" type="submit">Thêm trận</button></div></form><h3 style="margin-top:18px">Danh sách trận</h3><div class="tablewrap"><table><thead><tr><th>#</th><th>Trận</th><th>Thời gian</th><th>Tỉ số</th><th></th></tr></thead><tbody>${tMatches(t.id).map((m,i)=>`<tr><td>${i+1}</td><td><b>${esc(m.team_a)}</b> vs <b>${esc(m.team_b)}</b><br><span class="mini">${esc(m.category||"")} • ${esc(m.match_round||"")}</span></td><td>${formatDate(m.match_time)}<br>${esc(m.court||"")}</td><td>${m.score_a??"-"} - ${m.score_b??"-"}</td><td><button class="btn red" onclick="deleteRow('matches','${m.id}')">Xóa</button></td></tr>`).join("")}</tbody></table></div></div>`}
+function adminRewardsHtml(t){return `<div class="panel"><h2>Quản lý giải thưởng</h2><form id="rewardForm"><input type="hidden" id="rewardImageData"><div class="formgrid"><div><label>Hạng mục</label><input id="rewardRank" placeholder="Giải nhất"></div><div><label>Nội dung</label><select id="rewardCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div><div><label>Tên phần thưởng</label><input id="rewardTitle"></div><div><label>Giá trị</label><input id="rewardValue"></div><div><label>Hình ảnh</label><input id="rewardImageInput" type="file" accept="image/*"></div><div class="full"><label>Mô tả</label><textarea id="rewardDesc"></textarea></div></div><div class="actions"><button class="btn primary" type="submit">Thêm giải thưởng</button></div></form><div style="margin-top:18px">${publicRewardsHtml(t.id)}</div></div>`}
+function adminRankingHtml(t){return `<div class="panel"><h2>Cập nhật thứ hạng</h2><form id="rankingForm"><div class="formgrid"><div><label>Nội dung</label><select id="rankCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div><div><label>Đội/Người</label><input id="rankTeam" required></div><div><label>Trận</label><input id="rankPlayed" type="number" value="0"></div><div><label>Thắng</label><input id="rankWin" type="number" value="0"></div><div><label>Thua</label><input id="rankLoss" type="number" value="0"></div><div><label>Điểm</label><input id="rankPoints" type="number" value="0"></div></div><div class="actions"><button class="btn primary" type="submit">Thêm thứ hạng</button></div></form><div style="margin-top:18px">${publicRankingsHtml(t.id)}</div></div>`}
+function publicRankingsHtml(tid){const rows=tRankings(tid);if(!rows.length)return`<p class="muted">Chưa có bảng xếp hạng.</p>`;return`<div class="tablewrap"><table><thead><tr><th>#</th><th>Đội</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>Điểm</th></tr></thead><tbody>`+rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.team)}</b><br><span class="mini">${esc(r.category||"")}</span></td><td>${r.played}</td><td>${r.win}</td><td>${r.loss}</td><td><b>${r.points}</b></td></tr>`).join("")+`</tbody></table></div>`}
 
-function renderAdminSelectOptions(){const t=selectedTournament();const opts=(t?.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("");["rewardCategory","matchCategory","rankCategory"].forEach(id=>document.getElementById(id).innerHTML=opts)}
-async function refreshAdmin(){await loadAll();await loadAdminData();renderAll()}
-function renderAdminRegistrations(){
-  const t=selectedTournament(); adminRegSub.textContent=t?`Giải đang quản lý: ${t.name}`:"Vui lòng chọn giải đấu."; 
-  if(!t){adminRegistrationTable.innerHTML=`<div class="empty">Chưa chọn giải đấu.</div>`;return}
-  if(!state.adminRegistrations.length){adminRegistrationTable.innerHTML=`<p class="muted" style="padding:12px">Chưa có đăng ký.</p>`;return}
-  adminRegistrationTable.innerHTML=`<table><thead><tr><th>#</th><th>Người chơi</th><th>Nội dung</th><th>Đồng đội</th><th>Duyệt</th><th>Thanh toán</th><th></th></tr></thead><tbody>`+state.adminRegistrations.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.full_name)}</b><br><span class="mini">${esc(r.email)}<br>${esc(r.phone||"")}</span></td><td>${esc(r.category)}<br><span class="mini">${esc(r.level||"")}</span></td><td>${esc(r.partner_name||"-")}</td><td><select onchange="updateRegistration('${r.id}',this.value,null)">${["Pending","Approved","Rejected"].map(v=>`<option value="${v}" ${r.status===v?"selected":""}>${v}</option>`).join("")}</select></td><td><select onchange="updateRegistration('${r.id}',null,this.value)">${["Unpaid","Paid"].map(v=>`<option value="${v}" ${r.payment_status===v?"selected":""}>${v}</option>`).join("")}</select></td><td><button class="btn red" onclick="deleteRegistration('${r.id}')">Xóa</button></td></tr>`).join("")+`</tbody></table>`;
+function bindDynamicForms(){
+  const regForm=document.getElementById("registrationForm"); if(regForm)regForm.addEventListener("submit",submitRegistration);
+  const tourForm=document.getElementById("tournamentForm"); if(tourForm)tourForm.addEventListener("submit",submitTournament);
+  const bannerInput=document.getElementById("tourBannerInput"); if(bannerInput)bannerInput.addEventListener("change",e=>readImage(e.target.files[0],d=>tourBannerData.value=d));
+  const matchForm=document.getElementById("matchForm"); if(matchForm)matchForm.addEventListener("submit",submitMatch);
+  const rewardForm=document.getElementById("rewardForm"); if(rewardForm)rewardForm.addEventListener("submit",submitReward);
+  const rewardImg=document.getElementById("rewardImageInput"); if(rewardImg)rewardImg.addEventListener("change",e=>readImage(e.target.files[0],d=>rewardImageData.value=d));
+  const rankingForm=document.getElementById("rankingForm"); if(rankingForm)rankingForm.addEventListener("submit",submitRanking);
 }
-async function updateRegistration(id,status,payment){const r=state.adminRegistrations.find(x=>x.id===id);await rpc("admin_update_registration",{p_password:state.adminPassword,p_registration_id:id,p_status:status||r.status,p_payment_status:payment||r.payment_status});await refreshAdmin()}
-async function deleteRegistration(id){if(!confirm("Xóa đăng ký này?"))return;await rpc("admin_delete_row",{p_password:state.adminPassword,p_table:"registrations",p_id:id});await refreshAdmin()}
-window.updateRegistration=updateRegistration;window.deleteRegistration=deleteRegistration;
-rewardForm.addEventListener("submit",async e=>{e.preventDefault();const t=selectedTournament();if(!t)return;const data={id:rewardId.value||null,tournament_id:t.id,reward_rank:rewardRank.value.trim(),category:rewardCategory.value,title:rewardTitle.value.trim(),reward_value:rewardValue.value.trim(),image:rewardImageData.value,description:rewardDesc.value.trim()};await rpc("admin_upsert_reward",{p_password:state.adminPassword,p_data:data});clearRewardForm();await refreshAdmin()});
-function renderRewardAdmin(){const t=selectedTournament();if(!t){rewardList.innerHTML=`<div class="empty">Chưa chọn giải đấu.</div>`;return}const rows=tRewards(t.id);rewardList.innerHTML=rows.length?rows.map(r=>`<div class="item"><div class="itemhead"><div><b>${esc(r.reward_rank)} - ${esc(r.title)}</b><br><span class="mini">${esc(r.category)} • ${esc(r.reward_value)}</span></div>${r.image?`<img class="reward-img" src="${r.image}">`:""}</div><div>${esc(r.description||"")}</div><div class="actions"><button class="btn" onclick="editReward('${r.id}')">Sửa</button><button class="btn red" onclick="deleteRow('rewards','${r.id}')">Xóa</button></div></div>`).join(""):`<p class="muted">Chưa có giải thưởng.</p>`}
-function editReward(id){const r=state.rewards.find(x=>x.id===id);if(!r)return;rewardId.value=r.id;rewardRank.value=r.reward_rank;rewardCategory.value=r.category;rewardTitle.value=r.title;rewardValue.value=r.reward_value;rewardImageData.value=r.image||"";rewardDesc.value=r.description||"";setImagePreview("rewardImagePreview",r.image,"Chưa có hình ảnh")}
-function clearRewardForm(){rewardForm.reset();rewardId.value="";rewardImageData.value="";setImagePreview("rewardImagePreview","","Chưa có hình ảnh");renderAdminSelectOptions()} window.editReward=editReward;window.clearRewardForm=clearRewardForm;
-matchForm.addEventListener("submit",async e=>{e.preventDefault();const t=selectedTournament();if(!t)return;const data={id:matchId.value||null,tournament_id:t.id,category:matchCategory.value,match_round:matchRound.value.trim(),match_time:matchTime.value||null,court:matchCourt.value.trim(),team_a:matchTeamA.value.trim(),team_b:matchTeamB.value.trim(),score_a:matchScoreA.value===""?null:Number(matchScoreA.value),score_b:matchScoreB.value===""?null:Number(matchScoreB.value)};await rpc("admin_upsert_match",{p_password:state.adminPassword,p_data:data});clearMatchForm();await refreshAdmin()});
-function renderMatchAdmin(){const t=selectedTournament();if(!t){adminMatchList.innerHTML=`<div class="empty">Chưa chọn giải đấu.</div>`;return}const rows=tMatches(t.id);adminMatchList.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Nội dung</th><th>Thời gian</th><th>Trận</th><th>Tỉ số</th><th></th></tr></thead><tbody>`+rows.map((m,i)=>`<tr><td>${i+1}</td><td>${esc(m.category)}<br><span class="mini">${esc(m.match_round||"")}</span></td><td>${formatDate(m.match_time)}<br><span class="mini">${esc(m.court||"")}</span></td><td><b>${esc(m.team_a)}</b> vs <b>${esc(m.team_b)}</b></td><td>${m.score_a??"-"} - ${m.score_b??"-"}</td><td><button class="btn" onclick="editMatch('${m.id}')">Sửa</button> <button class="btn red" onclick="deleteRow('matches','${m.id}')">Xóa</button></td></tr>`).join("")+`</tbody></table>`:`<p class="muted" style="padding:12px">Chưa có trận đấu.</p>`}
-function editMatch(id){const m=state.matches.find(x=>x.id===id);if(!m)return;matchId.value=m.id;matchCategory.value=m.category;matchRound.value=m.match_round||"";matchTime.value=m.match_time?String(m.match_time).slice(0,16):"";matchCourt.value=m.court||"";matchTeamA.value=m.team_a;matchTeamB.value=m.team_b;matchScoreA.value=m.score_a??"";matchScoreB.value=m.score_b??""}
-function clearMatchForm(){matchForm.reset();matchId.value="";renderAdminSelectOptions()} window.editMatch=editMatch;window.clearMatchForm=clearMatchForm;
-async function deleteRow(table,id){if(!confirm("Xóa dòng này?"))return;await rpc("admin_delete_row",{p_password:state.adminPassword,p_table:table,p_id:id});await refreshAdmin()} window.deleteRow=deleteRow;
-
-function parseCsv(text){const lines=text.split(/\r?\n/).filter(x=>x.trim());if(lines.length<2)return[];const headers=lines[0].split(",").map(h=>norm(h));return lines.slice(1).map(line=>{const cols=line.split(",").map(x=>x.trim());const obj={};headers.forEach((h,i)=>obj[h]=cols[i]||"");return obj})}
-scheduleCsvInput.addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=async()=>{const t=selectedTournament();const rows=parseCsv(reader.result);for(const r of rows){await rpc("admin_upsert_match",{p_password:state.adminPassword,p_data:{id:null,tournament_id:t.id,category:r.category||"",match_round:r.round||"",match_time:r.time||null,court:r.court||"",team_a:r.teama||"",team_b:r.teamb||"",score_a:null,score_b:null}})}await refreshAdmin();alert("Đã upload lịch thi đấu.")};reader.readAsText(f);e.target.value=""});
-function downloadScheduleTemplate(){downloadBlob("category,round,time,court,teamA,teamB\nĐôi nam,Bảng A,2026-07-12T08:00,Sân 1,Nguyễn Văn A / Trần Văn B,Team C\n","pickleball-schedule-template.csv","text/csv;charset=utf-8")} window.downloadScheduleTemplate=downloadScheduleTemplate;
-
-function renderApprovalAdmin(){const t=selectedTournament();if(!t){pendingResultsList.innerHTML=`<div class="empty">Chưa chọn giải đấu.</div>`;return}const rows=state.pendingSubmissions;pendingResultsList.innerHTML=rows.length?rows.map(s=>`<div class="item"><div class="itemhead"><b>${esc(s.team_a||"")} vs ${esc(s.team_b||"")}</b><span class="badge orange">Pending</span></div><div>Người gửi: <b>${esc(s.submitted_by)}</b> • ${formatDate(s.created_at)}</div><div>Điểm đề xuất: <b>${esc(s.score_a)} - ${esc(s.score_b)}</b></div><div class="mini">${esc(s.note||"")}</div><div class="actions"><button class="btn green" onclick="reviewResult('${s.id}',true)">Duyệt & cập nhật chính thức</button><button class="btn red" onclick="reviewResult('${s.id}',false)">Từ chối</button></div></div>`).join(""):`<p class="muted">Không có kết quả chờ duyệt.</p>`}
-async function reviewResult(id,approve){await rpc("admin_review_result",{p_password:state.adminPassword,p_submission_id:id,p_approve:approve});await refreshAdmin()} window.reviewResult=reviewResult;
-rankingForm.addEventListener("submit",async e=>{e.preventDefault();const t=selectedTournament();if(!t)return;const data={id:rankId.value||null,tournament_id:t.id,category:rankCategory.value,team:rankTeam.value.trim(),played:Number(rankPlayed.value||0),win:Number(rankWin.value||0),loss:Number(rankLoss.value||0),points:Number(rankPoints.value||0),note:rankNote.value.trim()};await rpc("admin_upsert_ranking",{p_password:state.adminPassword,p_data:data});clearRankingForm();await refreshAdmin()});
-function renderRankingAdmin(){const t=selectedTournament();if(!t){adminRankingList.innerHTML=`<div class="empty">Chưa chọn giải đấu.</div>`;return}const rows=tRankings(t.id);adminRankingList.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Đội / Người</th><th>Trận</th><th>Thắng</th><th>Thua</th><th>Điểm</th><th></th></tr></thead><tbody>`+rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.team)}</b><br><span class="mini">${esc(r.category)}</span></td><td>${r.played}</td><td>${r.win}</td><td>${r.loss}</td><td><b>${r.points}</b></td><td><button class="btn" onclick="editRanking('${r.id}')">Sửa</button> <button class="btn red" onclick="deleteRow('rankings','${r.id}')">Xóa</button></td></tr>`).join("")+`</tbody></table>`:`<p class="muted" style="padding:12px">Chưa có thứ hạng.</p>`}
-function editRanking(id){const r=state.rankings.find(x=>x.id===id);if(!r)return;rankId.value=r.id;rankCategory.value=r.category;rankTeam.value=r.team;rankPlayed.value=r.played;rankWin.value=r.win;rankLoss.value=r.loss;rankPoints.value=r.points;rankNote.value=r.note||""}
-function clearRankingForm(){rankingForm.reset();rankId.value="";rankPlayed.value=0;rankWin.value=0;rankLoss.value=0;rankPoints.value=0;renderAdminSelectOptions()} window.editRanking=editRanking;window.clearRankingForm=clearRankingForm;
-function downloadBlob(content,filename,type){const blob=new Blob(["\ufeff"+content],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url)}
-async function downloadCSV(){const t=selectedTournament();if(!t)return;const rows=state.adminRegistrations;const headers=["Tournament","Full Name","Email","Phone","Organization","Category","Level","Partner","Status","Payment","Created At","Note"];const csv=[headers,...rows.map(r=>[t.name,r.full_name,r.email,r.phone,r.organization,r.category,r.level,r.partner_name,r.status,r.payment_status,r.created_at,r.note])].map(row=>row.map(c=>`"${String(c||"").replace(/"/g,'""')}"`).join(",")).join("\n");downloadBlob(csv,`registrations-${t.name}.csv`,"text/csv;charset=utf-8")} window.downloadCSV=downloadCSV;
+function readImage(file,cb){if(!file)return;const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(file)}
+async function submitTournament(e){e.preventDefault();const cats=[...document.querySelectorAll('input[name="tourCategory"]:checked')].map(x=>x.value);if(!cats.length){alert("Chọn ít nhất 1 nội dung thi đấu.");return}const data={id:tourId.value||null,name:tourName.value.trim(),status:tourStatus.value,event_date:tourDate.value,registration_deadline:tourDeadline.value||null,location:tourLocation.value.trim(),categories:cats,entry_fee:Number(tourFee.value||0),currency:tourCurrency.value,banner_image:tourBannerData.value,description:tourDescription.value.trim()};try{const id=await rpc("admin_upsert_tournament",{p_password:state.session.adminPassword,p_data:data});state.selectedTournamentId=id;localStorage.setItem(SELECTED_TOURNAMENT_KEY,id);state.activeTab="overview";await loadAll();showSection("tournament")}catch(err){alert(err.message||err)}}
+async function submitMatch(e){e.preventDefault();const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);const data={id:null,tournament_id:t.id,category:matchCategory.value,match_round:matchRound.value.trim(),match_time:matchTime.value||null,court:matchCourt.value.trim(),team_a:matchTeamA.value.trim(),team_b:matchTeamB.value.trim(),score_a:matchScoreA.value===""?null:Number(matchScoreA.value),score_b:matchScoreB.value===""?null:Number(matchScoreB.value)};await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});await loadAll();state.activeTab="admin_schedule";renderTournamentDetail()}
+async function submitReward(e){e.preventDefault();const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);const data={id:null,tournament_id:t.id,reward_rank:rewardRank.value.trim(),category:rewardCategory.value,title:rewardTitle.value.trim(),reward_value:rewardValue.value.trim(),image:rewardImageData.value||"",description:rewardDesc.value.trim()};await rpc("admin_upsert_reward",{p_password:state.session.adminPassword,p_data:data});await loadAll();state.activeTab="admin_rewards";renderTournamentDetail()}
+async function submitRanking(e){e.preventDefault();const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);const data={id:null,tournament_id:t.id,category:rankCategory.value,team:rankTeam.value.trim(),played:Number(rankPlayed.value||0),win:Number(rankWin.value||0),loss:Number(rankLoss.value||0),points:Number(rankPoints.value||0),note:""};await rpc("admin_upsert_ranking",{p_password:state.session.adminPassword,p_data:data});await loadAll();state.activeTab="admin_ranking";renderTournamentDetail()}
+async function updateReg(id,status,payment){await rpc("admin_update_registration",{p_password:state.session.adminPassword,p_registration_id:id,p_status:status,p_payment_status:payment});await loadCurrentRegistrations(true)}
+async function deleteReg(id){if(!confirm("Xóa đăng ký này?"))return;await rpc("admin_delete_row",{p_password:state.session.adminPassword,p_table:"registrations",p_id:id});await loadCurrentRegistrations(true);await loadAll()}
+async function deleteRow(table,id){if(!confirm("Xóa dòng này?"))return;await rpc("admin_delete_row",{p_password:state.session.adminPassword,p_table:table,p_id:id});await loadAll();renderTournamentDetail()}
+async function deleteTournament(id){if(!confirm("Xóa giải đấu này và toàn bộ dữ liệu?"))return;await rpc("admin_delete_tournament",{p_password:state.session.adminPassword,p_tournament_id:id});state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY);await loadAll();showSection("list")}
+window.updateReg=updateReg;window.deleteReg=deleteReg;window.deleteRow=deleteRow;window.deleteTournament=deleteTournament;
 
 initSupabase();
 loadAll();
