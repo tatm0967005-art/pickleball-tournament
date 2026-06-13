@@ -489,11 +489,11 @@ function startCountdownTicker(){
 function tTeams(id=state.selectedTournamentId){return (state.teams||[]).filter(x=>x.tournament_id===id)}
 function teamsByPool(id=state.selectedTournamentId){const result={};tTeams(id).forEach(t=>{const g=t.pool_group||"Chưa chia bảng";if(!result[g])result[g]=[];result[g].push(t)});return Object.entries(result).sort((a,b)=>a[0].localeCompare(b[0],"vi"));}
 function usedPlayerNames(id=state.selectedTournamentId){const used=new Set();tTeams(id).forEach(t=>{if(t.player_1)used.add(norm(t.player_1));if(t.player_2)used.add(norm(t.player_2));});return used;}
-function availableRegistrationsForTeam(regs,t){const used=usedPlayerNames(t.id);return (regs||[]).filter(r=>!used.has(norm(r.full_name)));}
+function availableRegistrationsForTeam(regs,t){const used=usedPlayerNames(t.id);return (regs||[]).filter(r=>!used.has(norm(r.full_name||r.name||r.player_name)));}
 function publicTeamInfoHtml(t){
   const teams=tTeams(t.id);
   const used=usedPlayerNames(t.id);
-  const names=(state.publicNames||[]).filter(x=>x.tournament_id===t.id);
+  const names=(state.publicNames||[]).filter(x=>!x.tournament_id || x.tournament_id===t.id);
   const pending=names.filter(x=>!used.has(norm(x.full_name)));
   const pools=teamsByPool(t.id);
   const teamBlocks = pools.length ? pools.map(([pool,rows])=>`
@@ -818,8 +818,8 @@ function publicNamesHtml(rows,t=null){
 
   const pending=[];
   const fallbackPaired=[];
-  (rows||[]).filter(r=>!tid || r.tournament_id===tid).forEach(r=>{
-    const key=norm(r.full_name);
+  (rows||[]).filter(r=>!tid || !r.tournament_id || r.tournament_id===tid).forEach(r=>{
+    const key=norm(r.full_name||r.name||r.player_name);
     if(teamByPlayer[key]) return;
     if(r.partner_name && String(r.partner_name).trim()){
       fallbackPaired.push({
@@ -852,7 +852,7 @@ function publicNamesHtml(rows,t=null){
     return `<div class="pending-level">
       <div class="pending-level-title"><b><span class="level-pill ${levelClass(lv)}">Nhóm ${esc(lv)}</span> ${esc(levelLabel(lv))}</b><span class="badge">${arr.length} người</span></div>
       <div class="pending-players">
-        ${arr.map((r,i)=>`<div class="pending-player-compact"><b>${i+1}. ${esc(r.full_name)}</b><small>${esc(r.organization||"")}<br><span class="badge orange">Chờ cập nhật đội</span></small></div>`).join("")}
+        ${arr.map((r,i)=>`<div class="pending-player-compact"><b>${i+1}. ${esc(r.full_name||r.name||r.player_name||'')}</b><small>${esc(r.organization||r.department||r.company||'')}<br><span class="badge orange">Chờ cập nhật đội</span></small></div>`).join("")}
       </div>
     </div>`;
   }).join("");
@@ -872,7 +872,7 @@ function publicNamesHtml(rows,t=null){
     <div class="reg-status-section">
       <div class="reg-status-head"><b>⏳ Chưa ghép cặp / chờ cập nhật đội</b><span class="badge orange">${pending.length} người</span></div>
       <div class="reg-status-body">
-        ${pendingHtml || `<div class="notice">Tất cả VĐV đã được ghép cặp.</div>`}
+        ${pendingHtml || (pending.length===0 && !allPaired.length ? `<div class="empty">Chưa có dữ liệu ghép cặp. Danh sách đăng ký public đang được tải, vui lòng refresh lại trang.</div>` : `<div class="notice">Tất cả VĐV đã được ghép cặp.</div>`) }
       </div>
     </div>
   </div>`;
@@ -1036,7 +1036,7 @@ function myRegisteredCards(rows){
     <div class="itemhead"><div><b>${esc(r.tournament_name)}</b><br><span class="mini">${formatDate(r.event_date)} • ${esc(r.location||"")}</span></div><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></div>
     <div class="cardlist">
       <div><b>Nội dung:</b> ${esc(r.category||"")} • ${esc(levelLabel(r.level))}</div>
-      <div><b>Người chơi:</b> ${esc(r.full_name)}${r.partner_name?`<br><span class="mini">Đồng đội: ${esc(r.partner_name)}</span>`:""}</div>
+      <div><b>Người chơi:</b> ${esc(r.full_name||r.name||r.player_name||'')}${r.partner_name?`<br><span class="mini">Đồng đội: ${esc(r.partner_name)}</span>`:""}</div>
       <div><b>Thanh toán:</b> <span class="badge ${r.payment_status==="Paid"?"green":"orange"}">${esc(r.payment_status||"Unpaid")}</span></div>
     </div>
     <div class="actions"><button class="btn primary" onclick="openTournament('${r.tournament_id}')">Vào giải</button></div>
@@ -1049,7 +1049,7 @@ function copyInvite(){
 
 function myRegisteredTable(rows){
   return `<div class="tablewrap"><table><thead><tr><th>#</th><th>Giải</th><th>Nội dung</th><th>Người chơi</th><th>Trạng thái</th><th></th></tr></thead><tbody>`+
-    rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.tournament_name)}</b><br><span class="mini">${formatDate(r.event_date)} • ${esc(r.location||"")}</span></td><td>${esc(r.category||"")}</td><td>${esc(r.full_name)}${r.partner_name?`<br><span class="mini">Đồng đội: ${esc(r.partner_name)}</span>`:""}</td><td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td><td><button class="btn" onclick="openTournament('${r.tournament_id}')">Vào giải</button></td></tr>`).join("")+`</tbody></table></div>`;
+    rows.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.tournament_name)}</b><br><span class="mini">${formatDate(r.event_date)} • ${esc(r.location||"")}</span></td><td>${esc(r.category||"")}</td><td>${esc(r.full_name||r.name||r.player_name||'')}${r.partner_name?`<br><span class="mini">Đồng đội: ${esc(r.partner_name)}</span>`:""}</td><td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td><td><button class="btn" onclick="openTournament('${r.tournament_id}')">Vào giải</button></td></tr>`).join("")+`</tbody></table></div>`;
 }
 
 function renderTournamentDetail(){
@@ -1148,7 +1148,7 @@ function registrationsTable(rows,admin=false){
             <tbody>
               ${arr.map((r,i)=>`<tr>
                 <td>${i+1}</td>
-                <td><b>${esc(r.full_name)}</b><br><span class="mini">${esc(r.organization||"")}</span></td>
+                <td><b>${esc(r.full_name||r.name||r.player_name||'')}</b><br><span class="mini">${esc(r.organization||r.department||r.company||'')}</span></td>
                 <td><b>Email:</b> ${esc(r.email||"")}<br><b>Phone:</b> ${esc(r.phone||"")}</td>
                 <td>${esc(r.partner_name||"-")}<br><span class="mini">${esc(r.partner_email||"")}</span></td>
                 <td><span class="badge ${r.status==="Approved"?"green":r.status==="Rejected"?"red":"orange"}">${esc(r.status||"Pending")}</span></td>
@@ -1220,7 +1220,7 @@ async function loadTeamBuilderRegs(t){
 }
 function teamBuilderFormHtml(t, regs){
   const available=availableRegistrationsForTeam(regs,t);
-  const opts=available.map(r=>`<option value="${esc(r.full_name)}">${esc(r.full_name)} • ${esc(levelLabel(r.level))} • ${esc(r.category||"")}</option>`).join("");
+  const opts=available.map(r=>`<option value="${esc(r.full_name||r.name||r.player_name||'')}">${esc(r.full_name||r.name||r.player_name||'')} • ${esc(levelLabel(r.level))} • ${esc(r.category||"")}</option>`).join("");
   const usedCount=(regs||[]).length-available.length;
   return `<div class="builder-card">
     <form id="teamForm">
