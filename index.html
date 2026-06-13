@@ -801,41 +801,23 @@ function publicNamesHtml(rows,t=null){
     if(tm.player_2)teamByPlayer[norm(tm.player_2)]=tm;
   });
 
-  const pairedTeamIds=new Set();
-  const pairedCards=[];
-  teamRows.forEach(tm=>{
-    if(pairedTeamIds.has(tm.id))return;
-    pairedTeamIds.add(tm.id);
-    pairedCards.push({
-      type:"team",
-      pool:tm.pool_group||"Chưa chia bảng",
-      title:tm.team_name || `${tm.player_1||""} / ${tm.player_2||""}`,
-      p1:tm.player_1||"",
-      p2:tm.player_2||"",
-      note:tm.note||""
-    });
-  });
+  // Only teams created by Admin/BTC in the Teams table are considered "paired".
+  // partner_name from registration is just a fun/reference note and must NOT move a player to paired section.
+  const pairedCards=teamRows.map((tm,i)=>({
+    pool:tm.pool_group||"Chưa chia bảng",
+    title:tm.team_name || `${tm.player_1||""} / ${tm.player_2||""}`,
+    p1:tm.player_1||"",
+    p2:tm.player_2||"",
+    note:tm.note||""
+  }));
 
   const pending=[];
-  const fallbackPaired=[];
   (rows||[]).filter(r=>!tid || !r.tournament_id || r.tournament_id===tid).forEach(r=>{
     const key=norm(r.full_name||r.name||r.player_name);
     if(teamByPlayer[key]) return;
-    if(r.partner_name && String(r.partner_name).trim()){
-      fallbackPaired.push({
-        type:"partner",
-        pool:"Đã khai báo đồng đội",
-        title:r.full_name,
-        p1:r.full_name,
-        p2:r.partner_name,
-        note:r.organization||""
-      });
-    }else{
-      pending.push(r);
-    }
+    pending.push(r);
   });
 
-  const allPaired=[...pairedCards,...fallbackPaired];
   const levelOrder=["A+","A-","B+","B-"];
   const pendingByLevel={};
   pending.forEach(r=>{
@@ -852,27 +834,30 @@ function publicNamesHtml(rows,t=null){
     return `<div class="pending-level">
       <div class="pending-level-title"><b><span class="level-pill ${levelClass(lv)}">Nhóm ${esc(lv)}</span> ${esc(levelLabel(lv))}</b><span class="badge">${arr.length} người</span></div>
       <div class="pending-players">
-        ${arr.map((r,i)=>`<div class="pending-player-compact"><b>${i+1}. ${esc(r.full_name||r.name||r.player_name||'')}</b><small>${esc(r.organization||r.department||r.company||'')}<br><span class="badge orange">Chờ cập nhật đội</span></small></div>`).join("")}
+        ${arr.map((r,i)=>`<div class="pending-player-compact">
+          <b>${i+1}. ${esc(r.full_name||r.name||r.player_name||"")}</b>
+          <small>${esc(r.organization||r.department||r.company||"")}${r.partner_name?`<br>Ghi chú đồng đội: ${esc(r.partner_name)}`:""}<br><span class="badge orange">Chờ cập nhật đội</span></small>
+        </div>`).join("")}
       </div>
     </div>`;
   }).join("");
 
   return `<div class="reg-compact-wrap">
     <div class="reg-status-section">
-      <div class="reg-status-head"><b>✅ Đã ghép cặp / đã có đội</b><span class="badge green">${allPaired.length} đội/cặp</span></div>
+      <div class="reg-status-head"><b>✅ Đã ghép cặp / đã có đội</b><span class="badge green">${pairedCards.length} đội</span></div>
       <div class="reg-status-body">
-        ${allPaired.length?`<div class="paired-grid">${allPaired.map((p,i)=>`<div class="pair-card">
+        ${pairedCards.length?`<div class="paired-grid">${pairedCards.map((p,i)=>`<div class="pair-card">
           <span class="pair-tag">${esc(p.pool)}</span>
           <b>${i+1}. ${esc(p.title)}</b>
           <small>${esc(p.p1)} ${p.p2?`/ ${esc(p.p2)}`:""}${p.note?`<br>${esc(p.note)}`:""}</small>
-        </div>`).join("")}</div>`:`<div class="empty">Chưa có đội/cặp nào được cập nhật.</div>`}
+        </div>`).join("")}</div>`:`<div class="empty">Chưa có đội/cặp nào được BTC cập nhật.</div>`}
       </div>
     </div>
 
     <div class="reg-status-section">
       <div class="reg-status-head"><b>⏳ Chưa ghép cặp / chờ cập nhật đội</b><span class="badge orange">${pending.length} người</span></div>
       <div class="reg-status-body">
-        ${pendingHtml || (pending.length===0 && !allPaired.length ? `<div class="empty">Chưa có dữ liệu ghép cặp. Danh sách đăng ký public đang được tải, vui lòng refresh lại trang.</div>` : `<div class="notice">Tất cả VĐV đã được ghép cặp.</div>`) }
+        ${pendingHtml || (pending.length===0 && !pairedCards.length ? `<div class="empty">Chưa có dữ liệu đăng ký public. Vui lòng refresh lại trang.</div>` : `<div class="notice">Tất cả VĐV đã được BTC ghép cặp trong hệ thống.</div>`) }
       </div>
     </div>
   </div>`;
