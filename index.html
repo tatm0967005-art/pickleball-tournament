@@ -295,6 +295,30 @@
   .home-team-grid,.pending-list{grid-template-columns:1fr}
 }
 
+  
+/* v23 Compact public registration list */
+.reg-compact-wrap{display:grid;gap:14px}
+.reg-status-section{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+.reg-status-head{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:14px 16px;background:#f8fafc;border-bottom:1px solid var(--line)}
+.reg-status-head b{font-size:18px}
+.reg-status-body{padding:14px}
+.paired-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.pair-card{border:1px solid #bfdbfe;border-radius:16px;background:#eff6ff;padding:13px}
+.pair-card b{display:block;font-size:16px;margin-bottom:5px}
+.pair-card small{display:block;color:#475569;line-height:1.4}
+.pair-card .pair-tag{display:inline-flex;margin-bottom:8px;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;background:#dbeafe;color:#1e40af}
+.pending-levels{display:grid;gap:12px}
+.pending-level{border:1px dashed #cbd5e1;border-radius:16px;background:#fff;padding:12px}
+.pending-level-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.pending-players{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pending-player-compact{border:1px solid var(--line);border-radius:12px;background:#f8fafc;padding:10px}
+.pending-player-compact b{display:block;font-size:14px}
+.pending-player-compact small{display:block;color:#64748b;line-height:1.35;margin-top:3px}
+@media(max-width:760px){
+  .paired-grid,.pending-players{grid-template-columns:1fr}
+  .reg-status-head{align-items:flex-start;flex-direction:column}
+}
+
   </style>
 </head>
 <body>
@@ -736,8 +760,6 @@ function renderInfo(){
           </div>
         </div>
 
-${publicTeamInfoHtml(t)}
-
         <div class="panel" style="box-shadow:none;margin-top:18px;background:#fff">
           <div class="itemhead">
             <div><h3>Timeline giải đấu</h3><p class="sub">Các mốc chính để vận động viên và nhà tài trợ cùng theo dõi.</p></div>
@@ -755,10 +777,10 @@ ${publicTeamInfoHtml(t)}
 
         <div class="panel" style="box-shadow:none;margin-top:18px;background:#fff">
           <div class="itemhead">
-            <div><h3>Danh sách đã đăng ký</h3><p class="sub">Hiển thị công khai tên/đơn vị/nội dung để mọi người thấy giải đang có không khí. Không hiển thị email/số điện thoại ở trang public.</p></div>
+            <div><h3>Danh sách đăng ký & ghép cặp</h3><p class="sub">Gom theo trạng thái đã có đôi / chưa có đôi để dễ theo dõi. Trình nào chưa có người sẽ tự ẩn.</p></div>
             <button class="btn green" onclick="openRegister('${t.id}')">Tôi cũng muốn tham gia</button>
           </div>
-          ${publicNamesHtml(names)}
+          ${publicNamesHtml(names,t)}
         </div>
 
         <div class="sticky-cta">
@@ -768,26 +790,92 @@ ${publicTeamInfoHtml(t)}
       </div>
     </div>`;
 }
-function publicNamesHtml(rows){
+function publicNamesHtml(rows,t=null){
   if(!rows || !rows.length) return `<div class="empty">Chưa có danh sách public hoặc Admin chưa duyệt đăng ký.</div>`;
-  const groups = groupRowsByCategoryAndLevel(rows);
-  return groups.map(g=>{
-    const total = g.levels.reduce((s,[_,arr])=>s+arr.length,0);
-    return `<div class="grouped-section">
-      <div class="grouped-head"><b>${esc(g.category)}</b><span class="badge blue">${total} đăng ký</span></div>
-      ${g.levels.map(([lv,arr])=>`
-        <div class="level-group">
-          <div class="level-title"><b><span class="level-pill ${levelClass(lv)}">Nhóm ${esc(lv)}</span> ${esc(levelLabel(lv))}</b><span class="badge">${arr.length} người</span></div>
-          <div class="public-name-grid">
-            ${arr.slice(0,36).map((r,i)=>`
-              <div class="public-name">
-                <b>${i+1}. ${esc(r.full_name)}</b>
-                <small>${esc(r.organization||"")} ${r.partner_name?`• Đồng đội: ${esc(r.partner_name)}`:""}</small>
-              </div>`).join("")}
-          </div>
-        </div>`).join("")}
+  const tid=t?.id || state.selectedTournamentId;
+  const teamRows=tTeams(tid);
+  const used=usedPlayerNames(tid);
+  const teamByPlayer={};
+  teamRows.forEach(tm=>{
+    if(tm.player_1)teamByPlayer[norm(tm.player_1)]=tm;
+    if(tm.player_2)teamByPlayer[norm(tm.player_2)]=tm;
+  });
+
+  const pairedTeamIds=new Set();
+  const pairedCards=[];
+  teamRows.forEach(tm=>{
+    if(pairedTeamIds.has(tm.id))return;
+    pairedTeamIds.add(tm.id);
+    pairedCards.push({
+      type:"team",
+      pool:tm.pool_group||"Chưa chia bảng",
+      title:tm.team_name || `${tm.player_1||""} / ${tm.player_2||""}`,
+      p1:tm.player_1||"",
+      p2:tm.player_2||"",
+      note:tm.note||""
+    });
+  });
+
+  const pending=[];
+  const fallbackPaired=[];
+  (rows||[]).filter(r=>!tid || r.tournament_id===tid).forEach(r=>{
+    const key=norm(r.full_name);
+    if(teamByPlayer[key]) return;
+    if(r.partner_name && String(r.partner_name).trim()){
+      fallbackPaired.push({
+        type:"partner",
+        pool:"Đã khai báo đồng đội",
+        title:r.full_name,
+        p1:r.full_name,
+        p2:r.partner_name,
+        note:r.organization||""
+      });
+    }else{
+      pending.push(r);
+    }
+  });
+
+  const allPaired=[...pairedCards,...fallbackPaired];
+  const levelOrder=["A+","A-","B+","B-"];
+  const pendingByLevel={};
+  pending.forEach(r=>{
+    let lv=String(r.level||"B-").trim().toUpperCase();
+    if(lv==="A")lv="A+";
+    if(lv==="B")lv="A-";
+    if(lv==="C")lv="B-";
+    if(!levelOrder.includes(lv))lv="B-";
+    if(!pendingByLevel[lv])pendingByLevel[lv]=[];
+    pendingByLevel[lv].push(r);
+  });
+  const pendingHtml=levelOrder.filter(lv=>(pendingByLevel[lv]||[]).length>0).map(lv=>{
+    const arr=pendingByLevel[lv];
+    return `<div class="pending-level">
+      <div class="pending-level-title"><b><span class="level-pill ${levelClass(lv)}">Nhóm ${esc(lv)}</span> ${esc(levelLabel(lv))}</b><span class="badge">${arr.length} người</span></div>
+      <div class="pending-players">
+        ${arr.map((r,i)=>`<div class="pending-player-compact"><b>${i+1}. ${esc(r.full_name)}</b><small>${esc(r.organization||"")}<br><span class="badge orange">Chờ cập nhật đội</span></small></div>`).join("")}
+      </div>
     </div>`;
   }).join("");
+
+  return `<div class="reg-compact-wrap">
+    <div class="reg-status-section">
+      <div class="reg-status-head"><b>✅ Đã ghép cặp / đã có đội</b><span class="badge green">${allPaired.length} đội/cặp</span></div>
+      <div class="reg-status-body">
+        ${allPaired.length?`<div class="paired-grid">${allPaired.map((p,i)=>`<div class="pair-card">
+          <span class="pair-tag">${esc(p.pool)}</span>
+          <b>${i+1}. ${esc(p.title)}</b>
+          <small>${esc(p.p1)} ${p.p2?`/ ${esc(p.p2)}`:""}${p.note?`<br>${esc(p.note)}`:""}</small>
+        </div>`).join("")}</div>`:`<div class="empty">Chưa có đội/cặp nào được cập nhật.</div>`}
+      </div>
+    </div>
+
+    <div class="reg-status-section">
+      <div class="reg-status-head"><b>⏳ Chưa ghép cặp / chờ cập nhật đội</b><span class="badge orange">${pending.length} người</span></div>
+      <div class="reg-status-body">
+        ${pendingHtml || `<div class="notice">Tất cả VĐV đã được ghép cặp.</div>`}
+      </div>
+    </div>
+  </div>`;
 }
 
 function renderList(){
