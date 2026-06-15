@@ -319,6 +319,15 @@
   .reg-status-head{align-items:flex-start;flex-direction:column}
 }
 
+  
+/* v27 Full bracket placeholders and team-filtered result entry */
+.result-team-select{margin-top:14px}
+.result-team-select select{font-size:17px;font-weight:800}
+.result-selected-box{border:1px solid #bfdbfe;background:#eff6ff;border-radius:16px;padding:12px;margin-top:10px}
+.bracket-cup{margin-top:14px;border:1px solid #fde68a;background:#fffbeb;border-radius:18px;padding:14px}
+.bracket-cup h3{margin:0 0 8px;color:#92400e}
+.bracket-note{font-size:12px;color:#64748b;margin-top:8px;line-height:1.4}
+
   </style>
 </head>
 <body>
@@ -565,27 +574,34 @@ function bracketHtml(t){
   const aFinal=find("Seri A - Chung kết");
   const bSemi=[find("Seri B - Bán kết 1"),find("Seri B - Bán kết 2")].filter(Boolean);
   const bFinal=find("Seri B - Chung kết");
-  const placeholder = (title,teams)=>`<div class="match-card"><div class="match-teams">${esc(teams)}</div><div class="match-meta">${esc(title)} • Chờ hệ thống tự fill sau khi đủ dữ liệu</div></div>`;
+  const cup=find("Cúp dầu gội - Chung kết");
+  const placeholder = (title,teams)=>`<div class="match-card"><div class="match-teams">${esc(teams)}</div><div class="match-meta">${esc(title)} • Chờ hệ thống tự fill khi hoàn tất giai đoạn trước</div></div>`;
   return `<div class="grid two">
     <div class="panel" style="box-shadow:none;background:#fff">
       <h3>Seri A - Tranh Nhất / Nhì / Ba</h3>
-      <p class="sub">Top 1 và 2 mỗi bảng vào Seri A.</p>
+      <p class="sub">Hạng 1 và 2 mỗi bảng vào Seri A. Hệ thống fill đội sau khi vòng bảng có đủ kết quả.</p>
       <div class="bracket">
-        <div class="bracket-col"><div class="bracket-title">Bán kết</div>${aSemi.length?aSemi.map(x=>matchCardHtml(x)).join(""):placeholder("Seri A - Bán kết","A1 vs B2 / B1 vs A2")}</div>
+        <div class="bracket-col"><div class="bracket-title">Bán kết</div>${aSemi.length?aSemi.map(x=>matchCardHtml(x)).join(""):placeholder("Seri A - Bán kết","Nhất A vs Nhì B / Nhất B vs Nhì A")}</div>
         <div class="bracket-col"><div class="bracket-title">Tranh 3-4</div>${aThird?matchCardHtml(aThird):placeholder("Seri A - Tranh 3-4","Thua BK1 vs Thua BK2")}</div>
         <div class="bracket-col"><div class="bracket-title">Chung kết</div>${aFinal?matchCardHtml(aFinal):placeholder("Seri A - Chung kết","Thắng BK1 vs Thắng BK2")}</div>
       </div>
     </div>
     <div class="panel" style="box-shadow:none;background:#fff">
       <h3>Seri B - Vô địch Seri B</h3>
-      <p class="sub">Hạng 3 và 4 mỗi bảng vào Seri B.</p>
+      <p class="sub">Hạng 3 và 4 mỗi bảng vào Seri B. Hệ thống fill đội sau khi vòng bảng có đủ kết quả.</p>
       <div class="bracket">
-        <div class="bracket-col"><div class="bracket-title">Bán kết</div>${bSemi.length?bSemi.map(x=>matchCardHtml(x)).join(""):placeholder("Seri B - Bán kết","A3 vs B4 / B3 vs A4")}</div>
-        <div class="bracket-col"><div class="bracket-title">Chung kết</div>${bFinal?matchCardHtml(bFinal):placeholder("Seri B - Chung kết","Thắng BK1 vs Thắng BK2")}</div>
+        <div class="bracket-col"><div class="bracket-title">Bán kết</div>${bSemi.length?bSemi.map(x=>matchCardHtml(x)).join(""):placeholder("Seri B - Bán kết","3A vs 4B / 3B vs 4A")}</div>
+        <div class="bracket-col"><div class="bracket-title">Chung kết</div>${bFinal?matchCardHtml(bFinal):placeholder("Seri B - Chung kết","Thắng BK3 vs Thắng BK4")}</div>
+      </div>
+      <div class="bracket-cup">
+        <h3>🧴 Cúp dầu gội</h3>
+        <p class="sub">Đội chót mỗi bảng đánh với nhau. Hệ thống fill đội sau khi vòng bảng có đủ kết quả.</p>
+        ${cup?matchCardHtml(cup):placeholder("Cúp dầu gội - Chung kết","Chót bảng A vs Chót bảng B")}
       </div>
     </div>
   </div>`;
 }
+
 function formatTabHtml(t){
   return `${competitionFormatHtml(t)}
   <div class="panel" style="margin-top:18px"><h2>Đội & bảng đấu đã chốt</h2>${teamPoolsHtml(t)}</div>
@@ -920,46 +936,83 @@ function enterableMatches(){
   const tid=state.selectedTournamentId || t?.id;
   return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined));
 }
+function enterableMatches(){
+  const t=selectedTournament();
+  const tid=state.selectedTournamentId || t?.id;
+  return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined));
+}
+function enterableMatchesForTeam(teamName){
+  const key=norm(teamName);
+  if(!key) return [];
+  return enterableMatches().filter(m=>norm(m.team_a)===key || norm(m.team_b)===key);
+}
+function liveMatchOptionsHtml(teamName){
+  const live=enterableMatchesForTeam(teamName);
+  if(!teamName) return `<div class="empty">Vui lòng chọn đội của mình trước. Hệ thống chỉ hiển thị trận đang mở có đội đó.</div>`;
+  if(!live.length) return `<div class="empty">Hiện chưa có trận đang mở nhập kết quả cho đội này.</div>`;
+  return live.map((m,i)=>`
+    <label class="result-match-option">
+      <input type="radio" name="liveMatch" value="${m.id}" ${i===0?"checked":""}>
+      <b>${esc(m.team_a)} vs ${esc(m.team_b)}</b>
+      <div class="mini">${m.match_order?`Trận ${m.match_order} • `:""}${esc(m.match_round||"")} ${m.court?`• Sân: ${esc(m.court)}`:""} ${m.match_time?`• ${formatDate(m.match_time)}`:""}</div>
+    </label>`).join("");
+}
+function refreshLiveMatchList(){
+  const selected=document.getElementById("resultTeam")?.value || "";
+  const box=document.getElementById("liveMatchList");
+  const btn=document.getElementById("submitResultBtn");
+  if(box) box.innerHTML=liveMatchOptionsHtml(selected);
+  const hasMatch=!!document.querySelector('input[name="liveMatch"]');
+  if(btn) btn.disabled=!hasMatch;
+  bindResultMatchOptions();
+}
+function bindResultMatchOptions(){
+  document.querySelectorAll(".result-match-option input").forEach(inp=>inp.addEventListener("change",()=>{
+    document.querySelectorAll(".result-match-option").forEach(x=>x.classList.remove("selected"));
+    inp.closest(".result-match-option")?.classList.add("selected");
+  }));
+  document.querySelector(".result-match-option input:checked")?.closest(".result-match-option")?.classList.add("selected");
+}
 function renderResultScreen(){
   const el=document.getElementById("resultContent");
   if(!el)return;
   const t=selectedTournament();
+  const teams=t ? tTeams(t.id).filter(tm=>tm.pool_group && tm.pool_group!=="Chưa chia bảng") : [];
   const live=enterableMatches();
   el.innerHTML=`<div class="result-screen">
     <div class="result-hero">
       <span class="badge dark">Mobile Result Entry</span>
       <h1>Nhập kết quả trận đấu</h1>
-      <p>Chọn trận đang đánh, nhập điểm và gửi kết quả. Sau khi gửi, người chơi không sửa được nữa; chỉ Admin có quyền sửa trong trang quản trị.</p>
+      <p>Chọn đúng đội của mình trước. Hệ thống chỉ hiển thị trận đang mở có đội đó để tránh nhập nhầm hoặc nhập trùng.</p>
     </div>
     <div class="panel" style="margin-top:18px">
       ${t?`<div class="notice"><b>Giải đang chọn:</b> ${esc(t.name)}<br><span class="mini">Nếu chưa thấy trận, nhờ BTC bấm “Bắt đầu / mở nhập điểm” trong phần Quản lý lịch.</span></div>`:`<div class="warn">Chưa chọn giải đấu.</div>`}
       <form id="playerResultForm">
-        <label>Chọn trận đang đánh</label>
-        <div class="result-match-grid" id="liveMatchList">
-          ${live.length?live.map((m,i)=>`
-            <label class="result-match-option">
-              <input type="radio" name="liveMatch" value="${m.id}" ${i===0?"checked":""}>
-              <b>${esc(m.team_a)} vs ${esc(m.team_b)}</b>
-              <div class="mini">${esc(m.match_round||"")} ${m.court?`• Sân: ${esc(m.court)}`:""} ${m.match_time?`• ${formatDate(m.match_time)}`:""}</div>
-            </label>`).join(""):`<div class="empty">Hiện chưa có trận nào đang mở nhập kết quả.</div>`}
+        <div class="result-team-select">
+          <label>Chọn đội của mình</label>
+          <select id="resultTeam">
+            <option value="">-- Chọn đội --</option>
+            ${teams.map(tm=>`<option value="${esc(tm.team_name)}">${esc(tm.team_name)}${tm.pool_group?` • ${esc(tm.pool_group)}`:""}</option>`).join("")}
+          </select>
+          <div class="mini">Đang có ${live.length} trận được BTC mở nhập điểm.</div>
         </div>
+        <label style="margin-top:14px">Trận đang đánh của đội đã chọn</label>
+        <div class="result-match-grid" id="liveMatchList">${liveMatchOptionsHtml("")}</div>
         <div class="formgrid" style="margin-top:14px">
           <div><label>Người nhập</label><input id="resultBy" placeholder="Tên người nhập kết quả"></div>
           <div><label>Ghi chú nếu có</label><input id="resultNote" placeholder="VD: trọng tài xác nhận"></div>
           <div><label>Điểm đội A</label><input id="resultScoreA" required type="number" min="0" max="99"></div>
           <div><label>Điểm đội B</label><input id="resultScoreB" required type="number" min="0" max="99"></div>
         </div>
-        <div class="notice" style="margin-top:14px">Luật vòng bảng: 11 điểm, cách 2, tối đa 15. Kết quả gửi xong sẽ khóa cho người chơi.</div>
-        <div class="actions"><button class="btn green" type="submit" ${live.length?"":"disabled"}>Gửi kết quả</button></div>
+        <div class="notice" style="margin-top:14px">Tất cả các trận: 11 điểm, cách 2, chạm 15. Kết quả gửi xong sẽ khóa cho người chơi.</div>
+        <div class="actions"><button id="submitResultBtn" class="btn green" type="submit" disabled>Gửi kết quả</button></div>
       </form>
       <div id="resultSubmitMsg"></div>
     </div>
   </div>`;
-  document.querySelectorAll(".result-match-option input").forEach(inp=>inp.addEventListener("change",()=>{
-    document.querySelectorAll(".result-match-option").forEach(x=>x.classList.remove("selected"));
-    inp.closest(".result-match-option")?.classList.add("selected");
-  }));
-  document.querySelector(".result-match-option input:checked")?.closest(".result-match-option")?.classList.add("selected");
+  const teamSelect=document.getElementById("resultTeam");
+  if(teamSelect) teamSelect.addEventListener("change",refreshLiveMatchList);
+  bindResultMatchOptions();
   const f=document.getElementById("playerResultForm");
   if(f)f.addEventListener("submit",submitPlayerResult);
 }
@@ -968,7 +1021,9 @@ async function submitPlayerResult(e){
   const msg=document.getElementById("resultSubmitMsg");
   msg.innerHTML="";
   const picked=document.querySelector('input[name="liveMatch"]:checked');
-  if(!picked){msg.innerHTML=`<div class="danger" style="margin-top:14px">Vui lòng chọn trận đang đánh.</div>`;return}
+  const selectedTeam=document.getElementById("resultTeam")?.value || "";
+  if(!selectedTeam){msg.innerHTML=`<div class="danger" style="margin-top:14px">Vui lòng chọn đội của mình.</div>`;return}
+  if(!picked){msg.innerHTML=`<div class="danger" style="margin-top:14px">Không có trận đang mở cho đội đã chọn.</div>`;return}
   try{
     await rpc("public_submit_match_result_by_id",{
       p_match_id: picked.value,
@@ -1186,7 +1241,7 @@ function adminTeamsHtml(t){
     <div id="teamBuilderBox"><p class="muted">Đang tải danh sách đăng ký...</p></div>
     <div class="actions" style="margin-top:14px">
       <button class="btn green" onclick="generateGroupMatches()">Generate vòng bảng</button>
-      <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A & Seri B</button>
+      <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A, Seri B, Cúp dầu gội</button>
     </div>
     <h3 style="margin-top:18px">Đội & bảng hiện tại</h3>
     ${adminTeamsTable(t)}
@@ -1242,7 +1297,7 @@ function adminScheduleHtml(t){
   return `<div class="panel"><h2>Quản lý lịch / kết quả</h2>
     <div class="actions">
       <button class="btn green" onclick="generateGroupMatches()">Generate vòng bảng</button>
-      <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A & Seri B</button>
+      <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A, Seri B, Cúp dầu gội</button>
       <button class="btn" onclick="showSection('result')">Màn hình nhập kết quả</button>
     </div>
     <form id="matchForm" style="margin-top:14px"><div class="formgrid">
@@ -1440,7 +1495,10 @@ async function generateGroupMatches(){
     await upsertGeneratedMatch(t,m.baseRound,m.teamA,m.teamB,{court:m.court,match_order:m.order});
   }
 
-  alert(`Đã generate/cập nhật ${scheduled.length} trận vòng bảng theo 3 sân, rải đều Bảng A/B và hạn chế đội đánh liên tiếp.`);
+  // Create the full playoff/shampoo-cup framework immediately.
+  await generatePlayoffPlaceholders(t,scheduled.length+1);
+
+  alert(`Đã generate/cập nhật ${scheduled.length} trận vòng bảng và tạo sẵn khung Seri A, Seri B, Cúp dầu gội.`);
   await loadAll();
   state.activeTab="admin_schedule";
   renderTournamentDetail();
@@ -1448,31 +1506,72 @@ async function generateGroupMatches(){
 
 function winnerOf(m){if(!m || m.score_a===null || m.score_b===null || m.score_a===undefined || m.score_b===undefined)return "";return Number(m.score_a)>Number(m.score_b)?m.team_a:m.team_b}
 function loserOf(m){if(!m || m.score_a===null || m.score_b===null || m.score_a===undefined || m.score_b===undefined)return "";return Number(m.score_a)>Number(m.score_b)?m.team_b:m.team_a}
-async function upsertRound(t, round, teamA, teamB){
+async function upsertRound(t, round, teamA, teamB, extra={}){
   const existing=tMatches(t.id).find(m=>m.match_round===round);
-  const data={id:existing?.id||null,tournament_id:t.id,category:(t.categories||[])[0]||"Đôi nam",match_round:round,match_time:existing?.match_time||null,court:existing?.court||"",team_a:teamA,team_b:teamB,score_a:existing?.score_a??null,score_b:existing?.score_b??null};
+  const data={
+    id:existing?.id||null,
+    tournament_id:t.id,
+    category:(t.categories||[])[0]||"Đôi nam",
+    match_round:round,
+    match_time:existing?.match_time||extra.match_time||null,
+    court:existing?.court||extra.court||"",
+    team_a:teamA,
+    team_b:teamB,
+    score_a:existing?.score_a??null,
+    score_b:existing?.score_b??null,
+    match_order:extra.match_order||existing?.match_order||null
+  };
   await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});
+}
+async function generatePlayoffPlaceholders(t,startOrder=100){
+  await upsertRound(t,"Seri A - Bán kết 1","Nhất bảng A","Nhì bảng B",{match_order:startOrder});
+  await upsertRound(t,"Seri A - Bán kết 2","Nhất bảng B","Nhì bảng A",{match_order:startOrder+1});
+  await upsertRound(t,"Seri A - Tranh 3-4","Thua BK1","Thua BK2",{match_order:startOrder+2});
+  await upsertRound(t,"Seri A - Chung kết","Thắng BK1","Thắng BK2",{match_order:startOrder+3});
+  await upsertRound(t,"Seri B - Bán kết 1","Hạng 3 bảng A","Hạng 4 bảng B",{match_order:startOrder+4});
+  await upsertRound(t,"Seri B - Bán kết 2","Hạng 3 bảng B","Hạng 4 bảng A",{match_order:startOrder+5});
+  await upsertRound(t,"Seri B - Chung kết","Thắng BK3","Thắng BK4",{match_order:startOrder+6});
+  await upsertRound(t,"Cúp dầu gội - Chung kết","Chót bảng A","Chót bảng B",{match_order:startOrder+7});
 }
 async function generatePlayoffMatches(){
   const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
   const standings=Object.fromEntries(computeStandings(t));
   const A=standings["Bảng A"]||[], B=standings["Bảng B"]||[];
-  if(A.length<4 || B.length<4){alert("Cần tối thiểu 4 đội mỗi bảng để generate đủ Seri A và Seri B.");return}
-  await upsertRound(t,"Seri A - Bán kết 1",A[0].team,B[1].team);
-  await upsertRound(t,"Seri A - Bán kết 2",B[0].team,A[1].team);
-  await upsertRound(t,"Seri B - Bán kết 1",A[2].team,B[3].team);
-  await upsertRound(t,"Seri B - Bán kết 2",B[2].team,A[3].team);
+  const existingMax=Math.max(0,...tMatches(t.id).map(x=>Number(x.match_order||0)));
+  if(A.length<2 || B.length<2){
+    await generatePlayoffPlaceholders(t,existingMax+1);
+    alert("Đã tạo khung Seri A / Seri B / Cúp dầu gội. Đội sẽ được fill sau khi có đủ kết quả vòng bảng.");
+    await loadAll(); state.activeTab="format"; renderTournamentDetail(); return;
+  }
+
+  // Fill after group stage standings are available.
+  if(A.length>=2 && B.length>=2){
+    await upsertRound(t,"Seri A - Bán kết 1",A[0]?.team||"Nhất bảng A",B[1]?.team||"Nhì bảng B");
+    await upsertRound(t,"Seri A - Bán kết 2",B[0]?.team||"Nhất bảng B",A[1]?.team||"Nhì bảng A");
+  }
+  if(A.length>=4 && B.length>=4){
+    await upsertRound(t,"Seri B - Bán kết 1",A[2]?.team||"Hạng 3 bảng A",B[3]?.team||"Hạng 4 bảng B");
+    await upsertRound(t,"Seri B - Bán kết 2",B[2]?.team||"Hạng 3 bảng B",A[3]?.team||"Hạng 4 bảng A");
+  }
+  if(A.length>=1 && B.length>=1){
+    await upsertRound(t,"Cúp dầu gội - Chung kết",A[A.length-1]?.team||"Chót bảng A",B[B.length-1]?.team||"Chót bảng B");
+  }
+
   await loadAll();
   const t2=state.tournaments.find(x=>x.id===state.selectedTournamentId);
   const find=(r)=>tMatches(t2.id).find(m=>m.match_round===r);
   const as1=find("Seri A - Bán kết 1"), as2=find("Seri A - Bán kết 2");
   const bs1=find("Seri B - Bán kết 1"), bs2=find("Seri B - Bán kết 2");
+
+  // Fill final / third-place only after semifinals have results.
   await upsertRound(t2,"Seri A - Chung kết",winnerOf(as1)||"Thắng BK1",winnerOf(as2)||"Thắng BK2");
   await upsertRound(t2,"Seri A - Tranh 3-4",loserOf(as1)||"Thua BK1",loserOf(as2)||"Thua BK2");
-  await upsertRound(t2,"Seri B - Chung kết",winnerOf(bs1)||"Thắng BK1",winnerOf(bs2)||"Thắng BK2");
-  alert("Đã generate/cập nhật vòng trong Seri A và Seri B.");
+  await upsertRound(t2,"Seri B - Chung kết",winnerOf(bs1)||"Thắng BK3",winnerOf(bs2)||"Thắng BK4");
+
+  alert("Đã generate/cập nhật khung Seri A, Seri B và Cúp dầu gội theo giai đoạn hiện tại.");
   await loadAll(); state.activeTab="format"; renderTournamentDetail();
 }
+
 async function startMatch(id,currentCourt=""){
   const court=prompt("Nhập sân thi đấu:", currentCourt||"");
   if(court===null)return;
