@@ -398,6 +398,22 @@
 .row-actions{display:flex;gap:6px;flex-wrap:wrap}
 .row-actions .btn{font-size:11px;padding:7px 8px}
 
+  
+/* v31 HARD OVERRIDE admin schedule page */
+.v31-admin-schedule-marker{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px}
+.v31-main-schedule{margin-top:16px;border:2px solid #2563eb;border-radius:18px;overflow:hidden;background:#fff}
+.v31-main-schedule .v31-head{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:14px 16px}
+.v31-main-schedule .v31-head h3{margin:0;color:#1e40af}
+.v31-table{width:100%;border-collapse:collapse;min-width:1080px}
+.v31-table th{background:#0f2a55;color:#fff;text-align:left;padding:11px 10px;font-size:12px;text-transform:uppercase}
+.v31-table td{padding:11px 10px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
+.v31-table tr:nth-child(even){background:#f8fafc}
+.v31-order{font-weight:1000;color:#1d4ed8;font-size:16px}
+.v31-court{font-weight:1000;color:#b45309}
+.v31-team{font-weight:900;color:#0f172a}
+.v31-actions{display:flex;gap:6px;flex-wrap:wrap}
+.v31-actions .btn{font-size:11px;padding:7px 8px}
+
   </style>
 </head>
 <body>
@@ -1224,12 +1240,91 @@ function renderTabContent(){
   else if(state.activeTab==="admin_setup" && isAdmin()) el.innerHTML=adminSetupHtml(t);
   else if(state.activeTab==="admin_regs" && t && isAdmin()) {el.innerHTML=adminRegsHtml(); loadCurrentRegistrations(true);}
   else if(state.activeTab==="admin_teams" && t && isAdmin()) {el.innerHTML=adminTeamsHtml(t); loadTeamBuilderRegs(t);}
-  else if(state.activeTab==="admin_schedule" && t && isAdmin()) el.innerHTML=adminScheduleHtml(t);
+  else if(state.activeTab==="admin_schedule" && t && isAdmin()) el.innerHTML=adminSchedulePageV31(t);
   else if(state.activeTab==="admin_rewards" && t && isAdmin()) el.innerHTML=adminRewardsHtml(t);
   else if(state.activeTab==="admin_ranking" && t && isAdmin()) el.innerHTML=adminRankingHtml(t);
   else el.innerHTML=`<div class="panel"><div class="empty">Không có quyền hoặc chưa chọn giải.</div></div>`;
   bindDynamicForms();
 }
+
+function v31Stage(m){
+  const r=String(m.match_round||"");
+  if(r.startsWith("Bảng A")) return "Bảng A";
+  if(r.startsWith("Bảng B")) return "Bảng B";
+  return "Vòng trong";
+}
+function v31Score(m){
+  if(m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined) return `${m.score_a} - ${m.score_b}`;
+  if(m.status==="Live") return "Đang đánh";
+  if(m.status==="Completed") return "Hoàn tất";
+  return "Chưa đấu";
+}
+function v31OrderedRows(t){
+  return tMatches(t.id).slice()
+    .filter(m=>String(m.match_round||"").startsWith("Bảng A") || String(m.match_round||"").startsWith("Bảng B"))
+    .sort((a,b)=>{
+      const ao=Number(a.match_order||999999), bo=Number(b.match_order||999999);
+      if(ao!==bo) return ao-bo;
+      const ar=String(a.match_round||""), br=String(b.match_round||"");
+      if(ar!==br) return ar.localeCompare(br,"vi");
+      return String(a.team_a||"").localeCompare(String(b.team_a||""),"vi");
+    });
+}
+function adminSchedulePageV31(t){
+  const rows=v31OrderedRows(t);
+  const playoffs=tMatches(t.id).filter(m=>!(String(m.match_round||"").startsWith("Bảng A") || String(m.match_round||"").startsWith("Bảng B")))
+    .sort((a,b)=>(Number(a.match_order||999999)-Number(b.match_order||999999)) || String(a.match_round||"").localeCompare(String(b.match_round||""),"vi"));
+  return `<div class="panel"><h2>Quản lý lịch / kết quả <span class="v31-admin-schedule-marker">V31 ORDERED ACTIVE</span></h2>
+    <div class="notice"><b>Màn hình này đã bỏ layout card theo bảng.</b> Danh sách chính bên dưới là thứ tự gọi tên: Trận 1 → Trận 2 → Trận 3...</div>
+    <div class="actions">
+      <button class="btn green" onclick="generateGroupMatches()">Generate vòng bảng</button>
+      <button class="btn blue" onclick="renumberGroupMatches()">Đánh số lại thứ tự</button>
+      <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A, Seri B, Cúp dầu gội</button>
+      <button class="btn" onclick="showSection('result')">Màn hình nhập kết quả</button>
+    </div>
+
+    <div class="v31-main-schedule">
+      <div class="v31-head">
+        <div><h3>📣 Lịch gọi tên chính thức</h3><p class="mini">BTC gọi từ trên xuống. Nếu chưa có số trận, bấm “Đánh số lại thứ tự”.</p></div>
+        <span class="badge blue">${rows.length} trận vòng bảng</span>
+      </div>
+      ${rows.length?`<div class="tablewrap"><table class="v31-table">
+        <thead><tr><th>Thứ tự</th><th>Sân</th><th>Bảng</th><th>Lượt</th><th>Đội A</th><th>Đội B</th><th>Kết quả</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+        <tbody>${rows.map((m,i)=>`<tr>
+          <td><span class="v31-order">Trận ${esc(m.match_order||i+1)}</span></td>
+          <td><span class="v31-court">${esc(m.court||"-")}</span></td>
+          <td><span class="pool-badge ${v31Stage(m)==="Bảng B"?"pool-b":""}">${esc(v31Stage(m))}</span></td>
+          <td>${esc(m.match_round||"-")}</td>
+          <td><span class="v31-team">${esc(m.team_a||"TBC")}</span></td>
+          <td><span class="v31-team">${esc(m.team_b||"TBC")}</span></td>
+          <td><b>${esc(v31Score(m))}</b></td>
+          <td>${esc(m.status||"Scheduled")}</td>
+          <td><div class="v31-actions"><button class="btn orange" onclick="startMatch('${m.id}','${esc(m.court||"")}')">Bắt đầu</button><button class="btn red" onclick="deleteRow('matches','${m.id}')">Xóa</button></div></td>
+        </tr>`).join("")}</tbody>
+      </table></div>`:`<div class="empty">Chưa có lịch vòng bảng. Bấm Generate vòng bảng để tạo.</div>`}
+    </div>
+
+    ${playoffs.length?`<details style="margin-top:18px" open><summary style="font-weight:900;cursor:pointer">Vòng trong / Cúp dầu gội</summary><div class="grid two" style="margin-top:12px">${playoffs.map(m=>matchCardHtml(m,true)).join("")}</div></details>`:""}
+
+    <details style="margin-top:18px">
+      <summary style="font-weight:900;cursor:pointer">Thêm / cập nhật trận thủ công</summary>
+      <form id="matchForm" style="margin-top:14px"><div class="formgrid">
+        <div><label>Nội dung</label><select id="matchCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div>
+        <div><label>Vòng / Giai đoạn</label><select id="matchRound">
+          <option>Bảng A - Vòng tròn</option><option>Bảng B - Vòng tròn</option>
+          <option>Seri A - Bán kết 1</option><option>Seri A - Bán kết 2</option><option>Seri A - Tranh 3-4</option><option>Seri A - Chung kết</option>
+          <option>Seri B - Bán kết 1</option><option>Seri B - Bán kết 2</option><option>Seri B - Chung kết</option>
+          <option>Cúp dầu gội - Chung kết</option>
+        </select></div>
+        <div><label>Thời gian</label><input id="matchTime" type="datetime-local"></div><div><label>Sân</label><input id="matchCourt"></div>
+        <div><label>Đội A</label><input id="matchTeamA" list="teamOptions" required></div><div><label>Đội B</label><input id="matchTeamB" list="teamOptions" required></div>
+        <datalist id="teamOptions">${tTeams(t.id).map(tm=>`<option value="${esc(tm.team_name)}"></option>`).join("")}</datalist>
+        <div><label>Điểm A</label><input id="matchScoreA" type="number"></div><div><label>Điểm B</label><input id="matchScoreB" type="number"></div>
+      </div><div class="actions"><button class="btn primary" type="submit">Thêm / cập nhật trận</button></div></form>
+    </details>
+  </div>`;
+}
+
 function overviewHtml(t){return `<div class="grid two"><div class="panel"><h2>Thông tin giải đấu</h2><div class="cardlist"><div class="item"><b>Tên giải:</b> ${esc(t.name)}</div><div class="item"><b>Thời gian:</b> ${esc(t.event_date||"TBC")}</div><div class="item"><b>Hạn đăng ký:</b> ${formatDate(t.registration_deadline)}</div><div class="item"><b>Địa điểm:</b> ${esc(t.location||"TBC")}</div><div class="item"><b>Lệ phí:</b> ${money(t.entry_fee,t.currency)}</div></div></div><div class="panel"><h2>Nội dung thi đấu</h2><div class="meta">${(t.categories||[]).map(c=>`<span class="badge blue">${esc(c)}</span>`).join("")}</div><div class="notice" style="margin-top:14px">Số lượng đăng ký hiện tại: <b>${regCount(t.id)}</b> vận động viên.</div><div class="item" style="margin-top:12px"><b>Ghi chú nhóm trình A/B/C</b><br><span class="mini">A+, A-, B+, B- chỉ dùng để BTC ghép đội và random cho cân bằng, không mang ý nghĩa xếp hạng chuyên nghiệp.</span></div><p style="margin-top:12px">${esc(t.description||"")}</p>${publicTeamInfoHtml(t)}<h3 style="margin-top:18px">Timeline giải đấu</h3>${timelineHtml(t)}<h3 style="margin-top:18px">Thông tin nhà tài trợ</h3>${sponsorHtml(t)}</div></div>`}
 function isRegistrationOpen(t){if(t.status!=="Open")return false;if(t.registration_deadline && new Date(t.registration_deadline).getTime()<Date.now())return false;return true}
 function registerHtml(t){const open=isRegistrationOpen(t);return `<div class="panel"><h2>Đăng ký giải</h2>${open?`<p class="sub">Hạn đăng ký: ${formatDate(t.registration_deadline)}</p>`:`<div class="warn">Giải đã đóng đăng ký hoặc quá hạn.</div>`}<form id="registrationForm" class="${open?"":"hidden"}"><div class="formgrid"><div><label>Email</label><input required type="email" id="regEmail" value="${esc(state.session?.email||"")}"></div><div><label>Họ tên</label><input required id="regFullName"></div><div><label>Số điện thoại</label><input id="regPhone"></div><div><label>Đơn vị/CLB</label><input id="regOrg"></div><div><label>Nội dung</label><select id="regCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div><div><label>Nhóm trình giao lưu</label><select id="regLevel"><option value="A+">A+ - Đánh tốt / kéo team</option><option value="A-">A- - Đánh ổn</option><option value="B+">B+ - Biết chơi khá</option><option value="B-">B- - Giao lưu / mới chơi</option></select><p class="mini">BTC dùng A+, A-, B+, B- để random/ghép đội cân bằng, không phải xếp hạng vận động viên chuyên nghiệp.</p></div><div><label>Đồng đội</label><input id="regPartner"></div><div><label>Email đồng đội</label><input type="email" id="regPartnerEmail"></div><div class="full"><label>Ghi chú</label><textarea id="regNote"></textarea></div></div><div class="actions"><button class="btn primary" type="submit">Gửi đăng ký</button></div></form></div>`}
