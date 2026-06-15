@@ -546,7 +546,7 @@ function matchCardHtml(m, admin=false){
   return `<div class="match-card ${matchStatusClass(m)}">
     <div class="match-teams">${esc(m.team_a||"TBC")} <span class="muted">vs</span> ${esc(m.team_b||"TBC")}</div>
     <div class="score-big">${scoreText(m)}</div>
-    <div class="match-meta">${esc(m.match_round||"")} ${m.court?`• Sân: ${esc(m.court)}`:""} ${m.match_time?`• ${formatDate(m.match_time)}`:""} ${m.status?`• ${esc(m.status)}`:""}</div>
+    <div class="match-meta">${m.match_order?`Trận ${m.match_order} • `:""}${esc(m.match_round||"")} ${m.court?`• Sân: ${esc(m.court)}`:""} ${m.match_time?`• ${formatDate(m.match_time)}`:""} ${m.status?`• ${esc(m.status)}`:""}</div>
     ${m.status==="Live"?`<div class="match-code">Đang mở nhập kết quả trên mobile</div>`:""}
     ${admin?`<div class="actions" style="margin-top:10px">
       <button class="btn orange" onclick="startMatch('${m.id}','${esc(m.court||"")}')">Bắt đầu / mở nhập điểm</button>
@@ -657,7 +657,7 @@ async function loadAll(){
     const [tournaments,rewards,matches,rankings,teams] = await Promise.all([
       sb.from("tournaments").select("*").order("created_at",{ascending:false}),
       sb.from("rewards").select("*"),
-      sb.from("matches").select("*").order("match_time",{ascending:true}),
+      sb.from("matches").select("*").order("match_order",{ascending:true, nullsFirst:false}).order("match_time",{ascending:true, nullsFirst:false}),
       sb.from("rankings").select("*").order("points",{ascending:false}),
       sb.from("teams").select("*").order("pool_group",{ascending:true}).order("seed",{ascending:true})
     ]);
@@ -1301,27 +1301,151 @@ async function submitTeam(e){
   renderTournamentDetail();
 }
 
+function rrPairsForPool(teams){
+  // Circle method for round-robin. Keeps team order from Admin top-down list.
+  const arr=[...teams];
+  if(arr.length%2===1) arr.push({team_name:"BYE", bye:true});
+  const n=arr.length;
+  const rounds=[];
+  let rot=[...arr];
+  for(let r=1;r<n;r++){
+    const pairs=[];
+    for(let i=0;i<n/2;i++){
+      const a=rot[i], b=rot[n-1-i];
+      if(!a.bye && !b.bye){
+        pairs.push({
+          roundNo:r,
+          teamA:(r%2===0?b:a).team_name,
+          teamB:(r%2===0?a:b).team_name
+        });
+      }
+    }
+    rounds.push(pairs);
+    rot=[rot[0], rot[n-1], ...rot.slice(1,n-1)];
+  }
+  return rounds;
+}
+function buildRoundRobinMatches(t){
+  const poolEntries=teamsByPool(t.id).filter(([pool])=>pool==="Bảng A"||pool==="Bảng B");
+  const all=[];
+  poolEntries.forEach(([pool,teams])=>{
+    const sorted=[...teams].sort((a,b)=>(Number(a.seed||0)-Number(b.seed||0)) || String(a.team_name||"").localeCompare(String(b.team_name||""),"vi"));
+    rrPairsForPool(sorted).forEach((round,idx)=>{
+      round.forEach(m=>{
+        all.push({
+          pool,
+          roundNo:idx+1,
+          teamA:m.teamA,
+          teamB:m.teamB,
+          baseRound:`${pool} - Vòng tròn R${idx+1}`
+        });
+      });
+    });
+  });
+  return all;
+}
+function pickNextMatch(remaining, slotTeams, lastSlotTeams, globalPoolCount, previousPool){
+  const candidates=remaining.filter(m=>!slotTeams.has(norm(m.teamA)) && !slotTeams.has(norm(m.teamB)));
+  if(!candidates.length) return -1;
+
+  function score(m){
+    let s=0;
+    // Avoid teams that just played in previous slot where possible.
+    if(lastSlotTeams.has(norm(m.teamA))) s-=50;
+    if(lastSlotTeams.has(norm(m.teamB))) s-=50;
+    // Alternate Bảng A/B where possible.
+    if(previousPool && m.pool!==previousPool) s+=12;
+    // Balance total number of generated matches per pool.
+    s-=Number(globalPoolCount[m.pool]||0)*2;
+    // Keep round order from top-down list.
+    s-=m.roundNo;
+    return s;
+  }
+
+  let best=candidates[0], bestScore=score(best);
+  candidates.forEach(c=>{
+    const sc=score(c);
+    if(sc>bestScore){best=c;bestScore=sc;}
+  });
+  return remaining.indexOf(best);
+}
+function scheduleRoundRobin3Courts(t){
+  const remaining=buildRoundRobinMatches(t);
+  const scheduled=[];
+  const courts=["Sân 1","Sân 2","Sân 3"];
+  let slotNo=1, order=1;
+  let lastSlotTeams=new Set();
+  const globalPoolCount={};
+  let previousPool="";
+
+  while(remaining.length){
+    const slotTeams=new Set();
+    const slot=[];
+    for(let c=0;c<3;c++){
+      const idx=pickNextMatch(remaining,slotTeams,lastSlotTeams,globalPoolCount,previousPool);
+      if(idx<0) break;
+      const m=remaining.splice(idx,1)[0];
+      m.court=courts[(order-1)%courts.length];
+      m.slotNo=slotNo;
+      m.order=order++;
+      slot.push(m);
+      slotTeams.add(norm(m.teamA));
+      slotTeams.add(norm(m.teamB));
+      globalPoolCount[m.pool]=(globalPoolCount[m.pool]||0)+1;
+      previousPool=m.pool;
+    }
+    if(!slot.length){
+      const m=remaining.shift();
+      m.court=courts[(order-1)%courts.length];
+      m.slotNo=slotNo;
+      m.order=order++;
+      slot.push(m);
+    }
+    scheduled.push(...slot);
+    lastSlotTeams=slotTeams;
+    slotNo++;
+  }
+  return scheduled;
+}
 async function upsertGeneratedMatch(t, round, teamA, teamB, extra={}){
-  const existing=tMatches(t.id).find(m=>m.match_round===round && (norm(m.team_a)===norm(teamA) || norm(m.team_b)===norm(teamA)) && (norm(m.team_a)===norm(teamB) || norm(m.team_b)===norm(teamB)));
-  const data={id:existing?.id||null,tournament_id:t.id,category:(t.categories||[])[0]||"Đôi nam",match_round:round,match_time:extra.match_time||existing?.match_time||null,court:extra.court||existing?.court||"",team_a:teamA,team_b:teamB,score_a:existing?.score_a??null,score_b:existing?.score_b??null};
+  const existing=tMatches(t.id).find(m=>
+    m.match_round===round &&
+    ((norm(m.team_a)===norm(teamA) && norm(m.team_b)===norm(teamB)) || (norm(m.team_a)===norm(teamB) && norm(m.team_b)===norm(teamA)))
+  );
+  const data={
+    id:existing?.id||null,
+    tournament_id:t.id,
+    category:(t.categories||[])[0]||"Đôi nam",
+    match_round:round,
+    match_time:extra.match_time||existing?.match_time||null,
+    court:extra.court||existing?.court||"",
+    team_a:teamA,
+    team_b:teamB,
+    score_a:existing?.score_a??null,
+    score_b:existing?.score_b??null,
+    match_order:extra.match_order||existing?.match_order||null
+  };
   await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});
 }
 async function generateGroupMatches(){
   const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
   const pools=teamsByPool(t.id).filter(([pool])=>pool==="Bảng A"||pool==="Bảng B");
-  if(!pools.length){alert("Chưa có đội trong Bảng A/Bảng B.");return}
-  let count=0;
-  for(const [pool,teams] of pools){
-    for(let i=0;i<teams.length;i++){
-      for(let j=i+1;j<teams.length;j++){
-        await upsertGeneratedMatch(t,`${pool} - Vòng tròn`,teams[i].team_name,teams[j].team_name);
-        count++;
-      }
-    }
+  if(pools.length<2){alert("Cần có đội trong cả Bảng A và Bảng B trước khi generate vòng bảng.");return}
+  if(pools.some(([_,teams])=>teams.length<2)){alert("Mỗi bảng cần tối thiểu 2 đội.");return}
+
+  const scheduled=scheduleRoundRobin3Courts(t);
+  if(!scheduled.length){alert("Chưa có đội để generate lịch.");return}
+
+  for(const m of scheduled){
+    await upsertGeneratedMatch(t,m.baseRound,m.teamA,m.teamB,{court:m.court,match_order:m.order});
   }
-  alert(`Đã generate/cập nhật ${count} trận vòng bảng.`);
-  await loadAll(); state.activeTab="admin_schedule"; renderTournamentDetail();
+
+  alert(`Đã generate/cập nhật ${scheduled.length} trận vòng bảng theo 3 sân, rải đều Bảng A/B và hạn chế đội đánh liên tiếp.`);
+  await loadAll();
+  state.activeTab="admin_schedule";
+  renderTournamentDetail();
 }
+
 function winnerOf(m){if(!m || m.score_a===null || m.score_b===null || m.score_a===undefined || m.score_b===undefined)return "";return Number(m.score_a)>Number(m.score_b)?m.team_a:m.team_b}
 function loserOf(m){if(!m || m.score_a===null || m.score_b===null || m.score_a===undefined || m.score_b===undefined)return "";return Number(m.score_a)>Number(m.score_b)?m.team_b:m.team_a}
 async function upsertRound(t, round, teamA, teamB){
