@@ -357,6 +357,29 @@
   .schedule-row.header{display:none}
 }
 
+  
+/* v29 Admin match order first */
+.admin-order-table{border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden;margin-top:14px}
+.admin-order-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;background:#eff6ff;border-bottom:1px solid #bfdbfe}
+.admin-order-head b{font-size:19px;color:#1e40af}
+.admin-match-row{display:grid;grid-template-columns:78px 72px 92px 120px 1fr 1fr 92px 110px 180px;gap:9px;align-items:center;padding:11px 14px;border-bottom:1px solid #eef2f7}
+.admin-match-row:last-child{border-bottom:0}
+.admin-match-row.header{font-size:12px;font-weight:900;color:#475569;background:#f8fafc;text-transform:uppercase}
+.admin-match-row .order{font-size:16px;font-weight:1000;color:#1d4ed8}
+.admin-match-row .court{font-weight:1000;color:#92400e}
+.admin-match-row .round{font-size:12px;color:#64748b}
+.admin-match-row .team{font-weight:850;color:#0f172a}
+.admin-match-row .score{font-weight:1000;color:#166534}
+.admin-match-row .status-live{color:#c2410c;font-weight:1000}
+.admin-match-row .status-done{color:#166534;font-weight:1000}
+.admin-match-row .row-actions{display:flex;gap:6px;flex-wrap:wrap}
+.admin-match-row .row-actions .btn{font-size:11px;padding:7px 8px}
+.admin-helper-note{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.4}
+@media(max-width:1100px){
+  .admin-order-table{overflow-x:auto}
+  .admin-match-row{min-width:1060px}
+}
+
   </style>
 </head>
 <body>
@@ -1302,6 +1325,66 @@ function clearScheduleHtml(tid,admin=false){
   </div>`;
 }
 
+function adminGroupStageRows(tid){
+  return groupStageMatches(tid).map((m,i)=>({...m,_display_order:Number(m.match_order||0)||i+1}));
+}
+function adminOrderedScheduleHtml(t){
+  const rows=adminGroupStageRows(t.id);
+  if(!rows.length) return `<div class="empty">Chưa có lịch vòng bảng. Bấm Generate vòng bảng để tạo lịch.</div>`;
+  const missing=rows.some(m=>!m.match_order);
+  return `<div class="admin-order-table">
+    <div class="admin-order-head">
+      <div><b>📣 Danh sách trận theo thứ tự thi đấu</b><br><span class="mini">Đây là danh sách chính để gọi tên: từ trên xuống dưới.</span></div>
+      <span class="badge blue">${rows.length} trận vòng bảng</span>
+    </div>
+    ${missing?`<div class="admin-helper-note">Một số trận chưa có thứ tự trong DB. Bấm <b>Đánh số lại thứ tự</b> hoặc <b>Generate vòng bảng</b> để cập nhật match_order.</div>`:""}
+    <div class="admin-match-row header">
+      <div>Thứ tự</div><div>Sân</div><div>Bảng</div><div>Lượt</div><div>Đội A</div><div>Đội B</div><div>Điểm</div><div>Trạng thái</div><div>Hành động</div>
+    </div>
+    ${rows.map(m=>`<div class="admin-match-row">
+      <div class="order">Trận ${esc(m._display_order)}</div>
+      <div class="court">${esc(m.court||"-")}</div>
+      <div><span class="pool-badge ${poolFromRound(m)==="Bảng B"?"pool-b":""}">${esc(poolFromRound(m))}</span></div>
+      <div class="round">${esc(m.match_round||"-")}</div>
+      <div class="team">${esc(m.team_a||"TBC")}</div>
+      <div class="team">${esc(m.team_b||"TBC")}</div>
+      <div class="score">${esc(scoreText(m))}</div>
+      <div class="${m.status==="Live"?"status-live":(m.status==="Completed"?"status-done":"")}">${esc(m.status||"Scheduled")}</div>
+      <div class="row-actions">
+        <button class="btn orange" onclick="startMatch('${m.id}','${esc(m.court||"")}')">Bắt đầu</button>
+        <button class="btn red" onclick="deleteRow('matches','${m.id}')">Xóa</button>
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
+async function renumberGroupMatches(){
+  const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
+  if(!t){alert("Chưa chọn giải.");return}
+  const rows=groupStageMatches(t.id);
+  if(!rows.length){alert("Chưa có lịch vòng bảng để đánh số.");return}
+  for(let i=0;i<rows.length;i++){
+    const m=rows[i];
+    const data={
+      id:m.id,
+      tournament_id:t.id,
+      category:m.category||((t.categories||[])[0]||"Đôi nam"),
+      match_round:m.match_round,
+      match_time:m.match_time||null,
+      court:m.court||"",
+      team_a:m.team_a,
+      team_b:m.team_b,
+      score_a:m.score_a??null,
+      score_b:m.score_b??null,
+      match_order:i+1
+    };
+    await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});
+  }
+  alert("Đã đánh số lại thứ tự trận vòng bảng.");
+  await loadAll();
+  state.activeTab="admin_schedule";
+  renderTournamentDetail();
+}
+
 function publicMatchesHtml(tid){
   const rows=tMatches(tid);
   if(!rows.length)return`<p class="muted">Chưa có lịch thi đấu.</p>`;
@@ -1380,27 +1463,39 @@ function adminTeamsTable(t){
 
 function adminScheduleHtml(t){
   return `<div class="panel"><h2>Quản lý lịch / kết quả</h2>
-    <div class="notice">Lịch vòng bảng hiển thị theo 2 cách: thứ tự gọi tên toàn giải và tách riêng Bảng A/B để dễ biết đội nào đánh trước/sau.</div>
+    <div class="notice"><b>Danh sách chính là thứ tự thi đấu từ trên xuống.</b> BTC chỉ cần nhìn Trận 1, Trận 2, Trận 3... để gọi sân và gọi đội.</div>
     <div class="actions">
       <button class="btn green" onclick="generateGroupMatches()">Generate vòng bảng</button>
+      <button class="btn blue" onclick="renumberGroupMatches()">Đánh số lại thứ tự</button>
       <button class="btn orange" onclick="generatePlayoffMatches()">Generate / cập nhật Seri A, Seri B, Cúp dầu gội</button>
       <button class="btn" onclick="showSection('result')">Màn hình nhập kết quả</button>
     </div>
-    <form id="matchForm" style="margin-top:14px"><div class="formgrid">
-      <div><label>Nội dung</label><select id="matchCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div>
-      <div><label>Vòng / Giai đoạn</label><select id="matchRound">
-        <option>Bảng A - Vòng tròn</option><option>Bảng B - Vòng tròn</option>
-        <option>Seri A - Bán kết 1</option><option>Seri A - Bán kết 2</option><option>Seri A - Tranh 3-4</option><option>Seri A - Chung kết</option>
-        <option>Seri B - Bán kết 1</option><option>Seri B - Bán kết 2</option><option>Seri B - Chung kết</option>
-        <option>Cúp dầu gội - Chung kết</option>
-      </select></div>
-      <div><label>Thời gian</label><input id="matchTime" type="datetime-local"></div><div><label>Sân</label><input id="matchCourt"></div>
-      <div><label>Đội A</label><input id="matchTeamA" list="teamOptions" required></div><div><label>Đội B</label><input id="matchTeamB" list="teamOptions" required></div>
-      <datalist id="teamOptions">${tTeams(t.id).map(tm=>`<option value="${esc(tm.team_name)}"></option>`).join("")}</datalist>
-      <div><label>Điểm A</label><input id="matchScoreA" type="number"></div><div><label>Điểm B</label><input id="matchScoreB" type="number"></div>
-    </div><div class="actions"><button class="btn primary" type="submit">Thêm / cập nhật trận</button></div></form>
-    <h3 style="margin-top:18px">Lịch thi đấu rõ theo bảng</h3>
-    ${tMatches(t.id).length?clearScheduleHtml(t.id,true):`<p class="muted">Chưa có trận nào.</p>`}
+
+    ${adminOrderedScheduleHtml(t)}
+
+    <details style="margin-top:18px">
+      <summary style="font-weight:900;cursor:pointer">Xem phụ theo Bảng A / Bảng B</summary>
+      <div style="margin-top:12px">${scheduleByPoolHtml(t.id,true)}</div>
+    </details>
+
+    <details style="margin-top:18px">
+      <summary style="font-weight:900;cursor:pointer">Thêm / cập nhật trận thủ công</summary>
+      <form id="matchForm" style="margin-top:14px"><div class="formgrid">
+        <div><label>Nội dung</label><select id="matchCategory">${(t.categories||[]).map(c=>`<option>${esc(c)}</option>`).join("")}</select></div>
+        <div><label>Vòng / Giai đoạn</label><select id="matchRound">
+          <option>Bảng A - Vòng tròn</option><option>Bảng B - Vòng tròn</option>
+          <option>Seri A - Bán kết 1</option><option>Seri A - Bán kết 2</option><option>Seri A - Tranh 3-4</option><option>Seri A - Chung kết</option>
+          <option>Seri B - Bán kết 1</option><option>Seri B - Bán kết 2</option><option>Seri B - Chung kết</option>
+          <option>Cúp dầu gội - Chung kết</option>
+        </select></div>
+        <div><label>Thời gian</label><input id="matchTime" type="datetime-local"></div><div><label>Sân</label><input id="matchCourt"></div>
+        <div><label>Đội A</label><input id="matchTeamA" list="teamOptions" required></div><div><label>Đội B</label><input id="matchTeamB" list="teamOptions" required></div>
+        <datalist id="teamOptions">${tTeams(t.id).map(tm=>`<option value="${esc(tm.team_name)}"></option>`).join("")}</datalist>
+        <div><label>Điểm A</label><input id="matchScoreA" type="number"></div><div><label>Điểm B</label><input id="matchScoreB" type="number"></div>
+      </div><div class="actions"><button class="btn primary" type="submit">Thêm / cập nhật trận</button></div></form>
+    </details>
+
+    ${playoffMatchesOnly(t.id).length?`<div style="margin-top:18px"><h3>Vòng trong / Cúp dầu gội</h3><div class="grid two">${playoffMatchesOnly(t.id).map(m=>matchCardHtml(m,true)).join("")}</div></div>`:""}
   </div>`;
 }
 
@@ -1681,7 +1776,7 @@ async function deleteRow(table,id){if(!confirm("Xóa dòng này?"))return;await 
 setInterval(startCountdownTicker, 1000);renderTournamentDetail()}
 async function deleteTournament(id){if(!confirm("Xóa giải đấu này và toàn bộ dữ liệu?"))return;await rpc("admin_delete_tournament",{p_password:state.session.adminPassword,p_tournament_id:id});state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY);await loadAll();
 setInterval(startCountdownTicker, 1000);showSection("list")}
-window.updateReg=updateReg;window.deleteReg=deleteReg;window.deleteRow=deleteRow;window.deleteTournament=deleteTournament;window.generateGroupMatches=generateGroupMatches;window.generatePlayoffMatches=generatePlayoffMatches;window.startMatch=startMatch;window.assignTeamPool=assignTeamPool;
+window.updateReg=updateReg;window.deleteReg=deleteReg;window.deleteRow=deleteRow;window.deleteTournament=deleteTournament;window.generateGroupMatches=generateGroupMatches;window.generatePlayoffMatches=generatePlayoffMatches;window.startMatch=startMatch;window.assignTeamPool=assignTeamPool;window.renumberGroupMatches=renumberGroupMatches;
 
 initSupabase();
 loadAll();
