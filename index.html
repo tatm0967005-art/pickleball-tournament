@@ -766,6 +766,33 @@
 @media(max-width:980px){.pr45-rule-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.pr45-rule-grid{grid-template-columns:1fr}.pr45-rules-head{display:block}}
 
+  
+/* v46 quick info strip */
+.pr46-strip{margin-top:18px;display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+.pr46-now{background:linear-gradient(135deg,#0f2a55,#0b4aa2);color:#fff;border-radius:26px;padding:18px;border:1px solid rgba(255,255,255,.18);box-shadow:0 16px 42px rgba(15,42,85,.16)}
+.pr46-now-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.pr46-now h2{margin:0;color:#fff;text-transform:uppercase}
+.pr46-now .mini{color:#dbeafe}
+.pr46-now-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pr46-now-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:13px;backdrop-filter:blur(8px)}
+.pr46-now-card b{display:block;color:#facc15;margin-bottom:6px}
+.pr46-now-card .team{font-weight:1000;color:#fff;line-height:1.35}
+.pr46-now-card .status{display:inline-flex;margin-top:8px;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:1000;background:#dbeafe;color:#1d4ed8}
+.pr46-now-card .status.live{background:#ffedd5;color:#c2410c}
+.pr46-now-card .status.done{background:#dcfce7;color:#166534}
+.pr46-side{display:grid;gap:14px}
+.pr46-box{background:#fff;border:1px solid #dbeafe;border-radius:24px;padding:16px;box-shadow:0 12px 32px rgba(15,42,85,.08)}
+.pr46-box h3{margin:0 0 10px;color:#0f2a55;text-transform:uppercase}
+.pr46-legend{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pr46-legend-item{display:flex;gap:8px;align-items:center;font-weight:900;color:#334155;font-size:13px}
+.pr46-dot{width:14px;height:14px;border-radius:999px;display:inline-block}
+.pr46-dot.win{background:#22c55e}.pr46-dot.loss{background:#ef4444}.pr46-dot.wait{background:#3b82f6}.pr46-dot.live{background:#f97316}
+.pr46-announcement{border:1px dashed #f59e0b;background:#fffbeb;border-radius:18px;padding:12px;color:#92400e;line-height:1.5}
+.pr46-announcement ul{margin:8px 0 0;padding-left:18px}
+.pr46-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
+@media(max-width:1050px){.pr46-strip{grid-template-columns:1fr}.pr46-now-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.pr46-legend{grid-template-columns:1fr}}
+
   </style>
 </head>
 <body>
@@ -1261,6 +1288,66 @@ function pr45RulesFooterHtml(){
   </div>`;
 }
 
+
+function pr46MatchStatusLabel(m){
+  if(!m)return ["wait","Chưa có dữ liệu"];
+  if(m.status==="Live")return ["live","Đang đánh"];
+  if(m.status==="Completed" || (m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined))return ["done","Đã xong"];
+  return ["wait","Chưa đấu"];
+}
+function pr46MatchCard(title,m,emptyText){
+  if(!m)return `<div class="pr46-now-card"><b>${esc(title)}</b><div class="mini">${esc(emptyText||"Chưa có dữ liệu")}</div></div>`;
+  const [cls,label]=pr46MatchStatusLabel(m);
+  const hasScore=m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined;
+  return `<div class="pr46-now-card">
+    <b>${esc(title)}</b>
+    <div class="team">Trận ${esc(m.match_order||"-")}: ${esc(m.team_a||"TBC")} vs ${esc(m.team_b||"TBC")}</div>
+    <div class="mini">${hasScore?`Tỷ số: ${esc(m.score_a)} - ${esc(m.score_b)}`:esc(m.court||"Chờ sân")}</div>
+    <span class="status ${cls}">${label}</span>
+  </div>`;
+}
+function pr46QuickInfoHtml(t){
+  const rows=tMatches(t.id).slice().sort((a,b)=>Number(a.match_order||9999)-Number(b.match_order||9999));
+  const live=rows.find(m=>m.status==="Live");
+  const next=rows.find(m=>!(m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined) && m.status!=="Completed");
+  const last=rows.slice().reverse().find(m=>m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined);
+  return `<div class="pr46-strip">
+    <div class="pr46-now">
+      <div class="pr46-now-head">
+        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V46 QUICK INFO ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
+      </div>
+      <div class="pr46-now-grid">
+        ${pr46MatchCard("🔥 Đang diễn ra",live,"Chưa có trận đang đánh")}
+        ${pr46MatchCard("⏭️ Trận kế tiếp",next,"Chưa có trận kế tiếp")}
+        ${pr46MatchCard("✅ Trận vừa xong",last,"Chưa có trận đã hoàn tất")}
+      </div>
+    </div>
+
+    <div class="pr46-side">
+      <div class="pr46-box">
+        <h3>Legend màu sắc</h3>
+        <div class="pr46-legend">
+          <div class="pr46-legend-item"><span class="pr46-dot win"></span>Đội thắng</div>
+          <div class="pr46-legend-item"><span class="pr46-dot loss"></span>Đội thua</div>
+          <div class="pr46-legend-item"><span class="pr46-dot wait"></span>Chưa đấu</div>
+          <div class="pr46-legend-item"><span class="pr46-dot live"></span>Đang đánh</div>
+        </div>
+      </div>
+      <div class="pr46-box">
+        <h3>Thông báo từ BTC</h3>
+        <div class="pr46-announcement">
+          <b>VĐV và khách mời vui lòng theo dõi lịch tại trang này.</b>
+          <ul>
+            <li>Có mặt trước giờ thi đấu tối thiểu 10 phút.</li>
+            <li>Sân nào trống sẽ gọi trận kế tiếp.</li>
+            <li>Kết quả và bảng điểm được cập nhật theo điều hành BTC.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
 function pr43LandingHtml(t){
   const matchCount=tMatches(t.id).length;
   const teamCount=tTeams(t.id).filter(x=>x.pool_group==="Bảng A"||x.pool_group==="Bảng B").length;
@@ -1286,6 +1373,8 @@ function pr43LandingHtml(t){
         <div class="pr43-visual">${pr43FeaturedMatch(t)}</div>
       </div>
     </div>
+
+    ${pr46QuickInfoHtml(t)}
 
     <div class="pr43-section">
       <div class="pr43-section-head">
