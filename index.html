@@ -750,6 +750,22 @@
 @media(max-width:1100px){.pr44-bracket-stage{grid-template-columns:1fr}.pr44-group-grid{grid-template-columns:1fr}}
 @media(max-width:620px){.pr44-mini-teams,.pr44-bracket-teams{grid-template-columns:1fr}.pr44-mini-score,.pr44-bracket-vs{text-align:center}}
 
+  
+/* v45 rules footer */
+.pr45-rules{margin-top:18px;background:linear-gradient(180deg,#ffffff,#f8fbff);border:1px solid #dbeafe;border-radius:26px;padding:20px;box-shadow:0 14px 38px rgba(15,42,85,.08)}
+.pr45-rules-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}
+.pr45-rules-head h2{margin:0;color:#0f2a55;text-transform:uppercase}
+.pr45-rules-head p{margin:5px 0 0;color:#64748b}
+.pr45-rule-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pr45-rule-card{border:1px solid #e2e8f0;background:#fff;border-radius:20px;padding:15px;box-shadow:0 8px 22px rgba(15,42,85,.05)}
+.pr45-rule-card h3{margin:0 0 10px;color:#0f2a55;font-size:16px}
+.pr45-rule-card ul{margin:0;padding-left:18px;color:#334155;line-height:1.55}
+.pr45-rule-card li{margin:4px 0}
+.pr45-rule-note{margin-top:14px;border-radius:18px;background:#fffbeb;border:1px solid #fde68a;padding:13px;color:#92400e;font-weight:800}
+.pr45-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
+@media(max-width:980px){.pr45-rule-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.pr45-rule-grid{grid-template-columns:1fr}.pr45-rules-head{display:block}}
+
   </style>
 </head>
 <body>
@@ -1140,7 +1156,7 @@ function v42LandingDashboardHtml(t){
   if(typeof v41HomeDashboardHtml==="function"){
     return `<div style="margin-top:18px">${pr44TournamentHubHtml(t)}</div>`;
   }
-  return `<div class="panel" style="margin-top:18px"><h2>View nhanh giải đấu <span class="v41-marker">V44 PREMIUM HUB ACTIVE</span></h2><div class="empty">Chưa có dữ liệu dashboard.</div></div>`;
+  return `<div class="panel" style="margin-top:18px"><h2>View nhanh giải đấu <span class="v41-marker">V45 RULES ACTIVE</span></h2><div class="empty">Chưa có dữ liệu dashboard.</div></div>`;
 }
 
 
@@ -1166,6 +1182,85 @@ function pr43FeaturedMatch(t){
     <div class="mini" style="margin-top:10px;color:#64748b">${esc(m.court||"Chờ sân")} • Cập nhật theo dữ liệu BTC</div>
   </div>`;
 }
+
+function pr45RulesFooterHtml(){
+  return `<div class="pr45-rules">
+    <div class="pr45-rules-head">
+      <div>
+        <h2>Thể lệ & Luật chơi <span class="pr45-marker">V45 RULES ACTIVE</span></h2>
+        <p>Quy định tóm tắt để vận động viên và khách mời theo dõi nhanh trong ngày thi đấu.</p>
+      </div>
+      <span class="badge blue">Fair-play • Giao lưu • Kết nối</span>
+    </div>
+
+    <div class="pr45-rule-grid">
+      <div class="pr45-rule-card">
+        <h3>🏆 Thể thức thi đấu</h3>
+        <ul>
+          <li>10 đội chia 2 bảng: <b>Bảng A</b> và <b>Bảng B</b>.</li>
+          <li>Mỗi bảng 5 đội, thi đấu vòng tròn 1 lượt.</li>
+          <li>Thắng được <b>1 điểm</b>, thua <b>0 điểm</b>.</li>
+          <li>Xếp hạng theo: điểm → hiệu số → đối đầu → BTC quyết định/tiebreak nếu cần.</li>
+        </ul>
+      </div>
+
+      <div class="pr45-rule-card">
+        <h3>🎯 Vòng trong</h3>
+        <ul>
+          <li><b>Seri A:</b> Top 1 & Top 2 mỗi bảng.</li>
+          <li><b>Seri B:</b> Top 3 & Top 4 mỗi bảng.</li>
+          <li><b>Cúp gội đầu:</b> Hạng 5 Bảng A gặp Hạng 5 Bảng B.</li>
+          <li>Các trận vòng trong được cập nhật theo kết quả vòng bảng.</li>
+        </ul>
+      </div>
+
+      <div class="pr45-rule-card">
+        <h3>📌 Cách tính điểm trận</h3>
+        <ul>
+          <li>Mỗi trận đánh đến <b>11 điểm</b>.</li>
+          <li>Phải thắng cách biệt <b>2 điểm</b>.</li>
+          <li>Chạm trần <b>15 điểm</b>: ví dụ 15-14 là kết thúc.</li>
+          <li>Mỗi đội có <b>1 lần timeout</b>, tối đa 1 phút.</li>
+        </ul>
+      </div>
+
+      <div class="pr45-rule-card">
+        <h3>⏱️ Quy định gọi trận</h3>
+        <ul>
+          <li>BTC gọi trận theo thứ tự lịch thi đấu.</li>
+          <li>Sân nào trống sẽ gọi trận kế tiếp vào sân.</li>
+          <li>VĐV có mặt trước giờ thi đấu tối thiểu <b>10 phút</b>.</li>
+          <li>Sau khi được gọi, đội có tối đa <b>3 phút</b> để chuẩn bị vào trận.</li>
+        </ul>
+      </div>
+
+      <div class="pr45-rule-card">
+        <h3>🤝 Trọng tài & fair-play</h3>
+        <ul>
+          <li>VĐV tự hô điểm và tự điều tiết trận đấu trên tinh thần fair-play.</li>
+          <li>Mỗi trận có người giám sát/trọng tài hỗ trợ khi cần.</li>
+          <li>Nếu phát sinh tranh chấp, giám sát hỏi hai đội và đưa ra quyết định phù hợp.</li>
+          <li>Tình huống 50/50 có thể đánh lại điểm để tránh tranh cãi.</li>
+        </ul>
+      </div>
+
+      <div class="pr45-rule-card">
+        <h3>🔥 Tinh thần giải đấu</h3>
+        <ul>
+          <li>Ưu tiên giao lưu, vận động và kết nối.</li>
+          <li>Thi đấu hết mình nhưng tôn trọng đối thủ.</li>
+          <li>Không đặt nặng thắng thua hơn tinh thần vui vẻ.</li>
+          <li>BTC có quyền điều chỉnh linh hoạt để giải diễn ra suôn sẻ.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pr45-rule-note">
+      Lưu ý: Đây là giải giao lưu. Trường hợp phát sinh ngoài quy định, quyết định cuối cùng thuộc BTC trên tinh thần công bằng, vui vẻ và kết nối.
+    </div>
+  </div>`;
+}
+
 function pr43LandingHtml(t){
   const matchCount=tMatches(t.id).length;
   const teamCount=tTeams(t.id).filter(x=>x.pool_group==="Bảng A"||x.pool_group==="Bảng B").length;
@@ -1205,7 +1300,7 @@ function pr43LandingHtml(t){
 
     <div id="pr43-live-hub" class="pr43-section">
       <div class="pr43-section-head">
-        <div><h2>Live Tournament Hub <span class="pr43-marker">V44 PREMIUM HUB ACTIVE</span></h2><div class="pr43-note">View nhanh bảng điểm, thứ tự trận, trạng thái, điểm số và thắng/thua.</div></div>
+        <div><h2>Live Tournament Hub <span class="pr43-marker">V45 RULES ACTIVE</span></h2><div class="pr43-note">View nhanh bảng điểm, thứ tự trận, trạng thái, điểm số và thắng/thua.</div></div>
         <button class="btn primary" onclick="openTournament('${t.id}')">Mở trang quản lý/xem chi tiết</button>
       </div>
       ${pr44TournamentHubHtml(t)}
@@ -1215,6 +1310,8 @@ function pr43LandingHtml(t){
       <div class="pr43-section" style="margin-top:0"><h3>Timeline giải đấu</h3>${timelineHtml(t)}</div>
       <div class="pr43-section" style="margin-top:0"><h3>Thông tin nhà tài trợ</h3>${sponsorHtml(t)}</div>
     </div>
+
+    ${pr45RulesFooterHtml()}
 
     <div class="sticky-cta">
       <div><b>🔥 Giải đang nóng lên từng ngày</b><br><span class="mini">Mở link là xem được lịch, bảng điểm và kết quả ngay.</span></div>
@@ -2319,7 +2416,7 @@ function pr44PlayoffMapHtml(t){
 }
 function pr44TournamentHubHtml(t){
   return `<div class="pr44-hub-grid">
-    <div class="pr44-section-title"><div><h2>Bảng điểm vòng bảng</h2><div class="pr43-note">Cập nhật điểm, hiệu số và indicator phong độ.</div></div><span class="pr44-marker">V44 PREMIUM HUB ACTIVE</span></div>
+    <div class="pr44-section-title"><div><h2>Bảng điểm vòng bảng</h2><div class="pr43-note">Cập nhật điểm, hiệu số và indicator phong độ.</div></div><span class="pr44-marker">V45 RULES ACTIVE</span></div>
     ${typeof v36StandingsHtml==="function"?v36StandingsHtml(t):v35StandingsHtml(t)}
     <div class="pr44-section-title" style="margin-top:8px"><div><h2>Lịch vòng bảng</h2><div class="pr43-note">Tách riêng Bảng A/B để người chơi nhìn nhanh trận của mình.</div></div></div>
     <div class="pr44-group-grid">
@@ -2348,7 +2445,7 @@ function v41AllMatchesHtml(t){
 function v41HomeDashboardHtml(t){
   return `<div class="v41-home-dashboard">
     <div class="v41-home-head">
-      <div><h2>View nhanh giải đấu <span class="v41-marker">V44 PREMIUM HUB ACTIVE</span></h2><div class="sub">Bảng điểm, thứ tự trận, trạng thái, điểm số và indicator thắng/thua.</div></div>
+      <div><h2>View nhanh giải đấu <span class="v41-marker">V45 RULES ACTIVE</span></h2><div class="sub">Bảng điểm, thứ tự trận, trạng thái, điểm số và indicator thắng/thua.</div></div>
       <div class="meta"><span class="badge blue">${tMatches(t.id).length} trận</span><span class="badge green">${regCount(t.id)} VĐV</span></div>
     </div>
     <div class="panel"><h3>Bảng điểm vòng bảng</h3>${typeof v36StandingsHtml==="function"?v36StandingsHtml(t):v35StandingsHtml(t)}</div>
