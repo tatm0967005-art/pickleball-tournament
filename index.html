@@ -414,6 +414,29 @@
 .v31-actions{display:flex;gap:6px;flex-wrap:wrap}
 .v31-actions .btn{font-size:11px;padding:7px 8px}
 
+  
+/* v32 unified match schedule */
+.v32-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
+.v32-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.v32-schedule-panel{border:2px solid #2563eb;border-radius:20px;background:#fff;overflow:hidden;margin-top:14px}
+.v32-schedule-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#eff6ff;border-bottom:1px solid #bfdbfe;padding:14px 16px}
+.v32-schedule-head h3{margin:0;color:#1e40af}
+.v32-table{width:100%;border-collapse:collapse;min-width:1180px}
+.v32-table th{background:#0f2a55;color:#fff;text-align:left;padding:11px 10px;font-size:12px;text-transform:uppercase}
+.v32-table td{padding:10px;border-bottom:1px solid #e5e7eb;vertical-align:middle}
+.v32-table tbody tr:nth-child(even){background:#f8fafc}
+.v32-order{font-size:16px;font-weight:1000;color:#1d4ed8}
+.v32-court{font-weight:1000;color:#b45309}
+.v32-team{font-weight:900;color:#0f172a}
+.v32-score-input{width:64px !important;padding:7px 8px !important;text-align:center;font-weight:900}
+.v32-actions{display:flex;gap:6px;flex-wrap:wrap}
+.v32-actions .btn{font-size:11px;padding:7px 8px}
+.v32-status-live{color:#c2410c;font-weight:1000}
+.v32-status-done{color:#166534;font-weight:1000}
+.v32-subtle{font-size:12px;color:#64748b;line-height:1.4}
+.v32-check{width:18px !important;height:18px}
+@media(max-width:1100px){.v32-schedule-panel{overflow-x:auto}}
+
   </style>
 </head>
 <body>
@@ -1020,12 +1043,12 @@ function renderLogin(){
 function enterableMatches(){
   const t=selectedTournament();
   const tid=state.selectedTournamentId || t?.id;
-  return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined));
+  return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined)); // hide matches that already have result
 }
 function enterableMatches(){
   const t=selectedTournament();
   const tid=state.selectedTournamentId || t?.id;
-  return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined));
+  return tMatches(tid).filter(m => m.status === "Live" && (m.score_a === null || m.score_a === undefined) && (m.score_b === null || m.score_b === undefined)); // hide matches that already have result
 }
 function enterableMatchesForTeam(teamName){
   const key=norm(teamName);
@@ -1080,7 +1103,7 @@ function renderResultScreen(){
             <option value="">-- Chọn đội --</option>
             ${teams.map(tm=>`<option value="${esc(tm.team_name)}">${esc(tm.team_name)}${tm.pool_group?` • ${esc(tm.pool_group)}`:""}</option>`).join("")}
           </select>
-          <div class="mini">Đang có ${live.length} trận được BTC mở nhập điểm.</div>
+          <div class="mini">Đang có ${live.length} trận chưa có kết quả được BTC mở nhập điểm.</div>
         </div>
         <label style="margin-top:14px">Trận đang đánh của đội đã chọn</label>
         <div class="result-match-grid" id="liveMatchList">${liveMatchOptionsHtml("")}</div>
@@ -1187,11 +1210,11 @@ function renderTournamentDetail(){
     ["register","Đăng ký"],
     ["registrations","Danh sách đăng ký"],
     ["format","Thể thức/Bảng đấu"],
-    ["schedule","Lịch/Kết quả"],
+    ["match_schedule","Lịch Thi Đấu"],
     ["rewards","Giải thưởng"],
     ["report","Báo cáo"]
   ];
-  if(canAdmin){tabs.push(["admin_setup",t?"Setup":"Tạo giải"]); if(t){tabs.push(["admin_regs","Quản lý đăng ký"],["admin_teams","Đội & Bảng"],["admin_schedule","Quản lý lịch"],["admin_rewards","Quản lý thưởng"],["admin_ranking","Thứ hạng"])}}
+  if(canAdmin){tabs.push(["admin_setup",t?"Setup":"Tạo giải"]); if(t){tabs.push(["admin_regs","Quản lý đăng ký"],["admin_teams","Đội & Bảng"],["admin_rewards","Quản lý thưởng"],["admin_ranking","Thứ hạng"])}}
   tournamentDetail.innerHTML=`
     ${t?heroMini(t):""}
     <div class="tabs">${tabs.map(([id,label])=>`<button class="${state.activeTab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}</div>
@@ -1227,6 +1250,114 @@ function heroMini(t){return `
       </div>
     </div>
   </div>`}
+
+function v32IsGroupMatch(m){
+  const r=String(m.match_round||"");
+  return r.startsWith("Bảng A") || r.startsWith("Bảng B");
+}
+function v32Stage(m){
+  const r=String(m.match_round||"");
+  if(r.startsWith("Bảng A")) return "Bảng A";
+  if(r.startsWith("Bảng B")) return "Bảng B";
+  return "Vòng trong";
+}
+function v32ScoreText(m){
+  if(m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined) return `${m.score_a} - ${m.score_b}`;
+  if(m.status==="Live") return "Đang đánh";
+  if(m.status==="Completed") return "Hoàn tất";
+  return "Chưa đấu";
+}
+function v32StatusClass(m){
+  if(m.status==="Live") return "v32-status-live";
+  if(m.status==="Completed" || (m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined)) return "v32-status-done";
+  return "";
+}
+function v32OrderedMatches(tid){
+  return tMatches(tid).slice().sort((a,b)=>{
+    const ao=Number(a.match_order||999999), bo=Number(b.match_order||999999);
+    if(ao!==bo)return ao-bo;
+    const ar=String(a.match_round||""), br=String(b.match_round||"");
+    if(ar!==br)return ar.localeCompare(br,"vi");
+    return String(a.team_a||"").localeCompare(String(b.team_a||""),"vi");
+  });
+}
+function v32GroupMatches(tid){return v32OrderedMatches(tid).filter(v32IsGroupMatch)}
+function v32PlayoffMatches(tid){return v32OrderedMatches(tid).filter(m=>!v32IsGroupMatch(m))}
+function v32HasGeneratedGroup(tid){return v32GroupMatches(tid).length>0}
+function v32CanEdit(){return isAdmin()}
+function v32ScheduleHtml(t){
+  const isA=isAdmin();
+  const groupRows=v32GroupMatches(t.id);
+  const playoffRows=v32PlayoffMatches(t.id);
+  const generated=groupRows.length>0;
+  const allRows=[...groupRows, ...playoffRows];
+  const rowHtml=(m,i)=>`<tr>
+    <td>${isA && m.status!=="Completed" && !(m.score_a!==null && m.score_b!==null && m.score_a!==undefined && m.score_b!==undefined)?`<input class="v32-check" type="checkbox" name="v32MatchCheck" value="${m.id}">`:""}</td>
+    <td><span class="v32-order">Trận ${esc(m.match_order||i+1)}</span></td>
+    <td><span class="v32-court">${esc(m.court||"-")}</span></td>
+    <td><span class="pool-badge ${v32Stage(m)==="Bảng B"?"pool-b":""}">${esc(v32Stage(m))}</span></td>
+    <td><span class="v32-subtle">${esc(m.match_round||"-")}</span></td>
+    <td><span class="v32-team">${esc(m.team_a||"TBC")}</span></td>
+    <td><span class="v32-team">${esc(m.team_b||"TBC")}</span></td>
+    <td class="${v32StatusClass(m)}"><b>${esc(v32ScoreText(m))}</b></td>
+    <td>${esc(m.status||"Scheduled")}</td>
+    <td>${isA?`<div style="display:flex;gap:5px;align-items:center">
+      <input id="scoreA_${m.id}" class="v32-score-input" type="number" min="0" max="99" value="${m.score_a??""}" placeholder="A">
+      <span>-</span>
+      <input id="scoreB_${m.id}" class="v32-score-input" type="number" min="0" max="99" value="${m.score_b??""}" placeholder="B">
+    </div>`:``}</td>
+    <td>${isA?`<div class="v32-actions">
+      <button class="btn orange" onclick="startMatch('${m.id}','${esc(m.court||"")}')">Bắt đầu</button>
+      <button class="btn green" onclick="adminSaveScoreV32('${m.id}')">Lưu điểm</button>
+      <button class="btn red" onclick="deleteRow('matches','${m.id}')">Xóa</button>
+    </div>`:``}</td>
+  </tr>`;
+  return `<div class="panel"><h2>Lịch Thi Đấu <span class="v32-marker">V32 ACTIVE</span></h2>
+    <div class="notice"><b>Trang mới:</b> đã gộp Lịch/Kết quả và Quản lý lịch vào một nơi. Generate chỉ cho tạo vòng bảng một lần để tránh duplicate.</div>
+    ${isA?`<div class="v32-toolbar">
+      <button class="btn green" onclick="generateGroupMatches()" ${generated?"disabled":""}>${generated?"Đã generate vòng bảng":"Generate vòng bảng"}</button>
+      <button class="btn blue" onclick="renumberGroupMatches()">Đánh số lại thứ tự</button>
+      <button class="btn orange" onclick="generatePlayoffMatches()">Cập nhật Seri A/B + Cúp dầu gội</button>
+      <button class="btn primary" onclick="startSelectedMatchesV32()">Bắt đầu các trận đã chọn</button>
+      <button class="btn" onclick="showSection('result')">Màn hình người chơi nhập kết quả</button>
+    </div>`:""}
+    <div class="v32-schedule-panel">
+      <div class="v32-schedule-head">
+        <div><h3>📣 Thứ tự thi đấu chính thức</h3><div class="v32-subtle">BTC gọi theo thứ tự từ trên xuống. Có thể mở nhiều trận cùng lúc bằng checkbox.</div></div>
+        <span class="badge blue">${groupRows.length} trận vòng bảng</span>
+      </div>
+      ${allRows.length?`<div class="tablewrap"><table class="v32-table">
+        <thead><tr>${isA?"<th>Chọn</th>":"<th></th>"}<th>Thứ tự</th><th>Sân</th><th>Bảng</th><th>Lượt</th><th>Đội A</th><th>Đội B</th><th>Kết quả</th><th>Trạng thái</th><th>Admin nhập điểm</th><th>Hành động</th></tr></thead>
+        <tbody>
+          ${groupRows.map(rowHtml).join("")}
+          ${playoffRows.length?`<tr><td colspan="11" style="background:#fffbeb;font-weight:1000;color:#92400e">Vòng trong / Seri A / Seri B / Cúp dầu gội</td></tr>`:""}
+          ${playoffRows.map((m,i)=>rowHtml(m,groupRows.length+i)).join("")}
+        </tbody>
+      </table></div>`:`<div class="empty">Chưa có lịch. Admin bấm Generate vòng bảng để tạo lịch thi đấu.</div>`}
+    </div>
+  </div>`;
+}
+async function startSelectedMatchesV32(){
+  const ids=[...document.querySelectorAll('input[name="v32MatchCheck"]:checked')].map(x=>x.value);
+  if(!ids.length){alert("Chọn ít nhất 1 trận để bắt đầu.");return}
+  for(const id of ids){
+    await rpc("admin_start_match",{p_password:state.session.adminPassword,p_match_id:id,p_court:null});
+  }
+  alert(`Đã mở nhập điểm cho ${ids.length} trận.`);
+  await loadAll();
+  state.activeTab="match_schedule";
+  renderTournamentDetail();
+}
+async function adminSaveScoreV32(id){
+  const a=document.getElementById(`scoreA_${id}`)?.value;
+  const b=document.getElementById(`scoreB_${id}`)?.value;
+  if(a==="" || b===""){alert("Nhập đủ điểm đội A và B.");return}
+  await rpc("admin_update_match_score",{p_password:state.session.adminPassword,p_match_id:id,p_score_a:Number(a),p_score_b:Number(b)});
+  await loadAll();
+  state.activeTab="match_schedule";
+  renderTournamentDetail();
+}
+
 function renderTabContent(){
   const t=state.selectedTournamentId?state.tournaments.find(x=>x.id===state.selectedTournamentId):null;
   const el=document.getElementById("tabContent"); if(!el)return;
@@ -1234,7 +1365,7 @@ function renderTabContent(){
   else if(state.activeTab==="register" && t) el.innerHTML=registerHtml(t);
   else if(state.activeTab==="registrations" && t) {el.innerHTML=registrationListHtml(); loadCurrentRegistrations(isAdmin());}
   else if(state.activeTab==="format" && t) el.innerHTML=formatTabHtml(t);
-  else if(state.activeTab==="schedule" && t) el.innerHTML=`<div class="panel"><h2>Lịch thi đấu / Kết quả</h2>${publicMatchesHtml(t.id)}</div>`;
+  else if((state.activeTab==="match_schedule" || state.activeTab==="schedule" || state.activeTab==="admin_schedule") && t) el.innerHTML=v32ScheduleHtml(t);
   else if(state.activeTab==="rewards" && t) el.innerHTML=`<div class="panel"><h2>Giải thưởng</h2>${publicRewardsHtml(t.id)}</div>`;
   else if(state.activeTab==="report" && t) {el.innerHTML=reportHtml(t); loadCurrentRegistrations();}
   else if(state.activeTab==="admin_setup" && isAdmin()) el.innerHTML=adminSetupHtml(t);
@@ -1879,6 +2010,7 @@ async function upsertGeneratedMatch(t, round, teamA, teamB, extra={}){
 }
 async function generateGroupMatches(){
   const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
+  if(v32HasGeneratedGroup(t.id)){alert("Vòng bảng đã được generate rồi. Không generate lại để tránh duplicate.");return}
   const pools=teamsByPool(t.id).filter(([pool])=>pool==="Bảng A"||pool==="Bảng B");
   if(pools.length<2){alert("Cần có đội trong cả Bảng A và Bảng B trước khi generate vòng bảng.");return}
   if(pools.some(([_,teams])=>teams.length<2)){alert("Mỗi bảng cần tối thiểu 2 đội.");return}
@@ -1895,7 +2027,7 @@ async function generateGroupMatches(){
 
   alert(`Đã generate/cập nhật ${scheduled.length} trận vòng bảng và tạo sẵn khung Seri A, Seri B, Cúp dầu gội.`);
   await loadAll();
-  state.activeTab="admin_schedule";
+  state.activeTab="match_schedule";
   renderTournamentDetail();
 }
 
@@ -1989,7 +2121,7 @@ async function deleteRow(table,id){if(!confirm("Xóa dòng này?"))return;await 
 setInterval(startCountdownTicker, 1000);renderTournamentDetail()}
 async function deleteTournament(id){if(!confirm("Xóa giải đấu này và toàn bộ dữ liệu?"))return;await rpc("admin_delete_tournament",{p_password:state.session.adminPassword,p_tournament_id:id});state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY);await loadAll();
 setInterval(startCountdownTicker, 1000);showSection("list")}
-window.updateReg=updateReg;window.deleteReg=deleteReg;window.deleteRow=deleteRow;window.deleteTournament=deleteTournament;window.generateGroupMatches=generateGroupMatches;window.generatePlayoffMatches=generatePlayoffMatches;window.startMatch=startMatch;window.assignTeamPool=assignTeamPool;window.renumberGroupMatches=renumberGroupMatches;
+window.updateReg=updateReg;window.deleteReg=deleteReg;window.deleteRow=deleteRow;window.deleteTournament=deleteTournament;window.generateGroupMatches=generateGroupMatches;window.generatePlayoffMatches=generatePlayoffMatches;window.startMatch=startMatch;window.assignTeamPool=assignTeamPool;window.renumberGroupMatches=renumberGroupMatches;window.startSelectedMatchesV32=startSelectedMatchesV32;window.adminSaveScoreV32=adminSaveScoreV32;
 
 initSupabase();
 loadAll();
