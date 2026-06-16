@@ -1036,6 +1036,14 @@ function renderNav(){
 function bannerStyle(t){return t?.banner_image?`style="background-image:linear-gradient(120deg,rgba(8,20,40,.30),rgba(8,20,40,.45)),url('${t.banner_image}')"`:""}
 function cardBannerStyle(t){return t?.banner_image?`style="background-image:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.55)),url('${t.banner_image}')"`:""}
 
+
+function v42LandingDashboardHtml(t){
+  if(typeof v41HomeDashboardHtml==="function"){
+    return `<div style="margin-top:18px">${v41HomeDashboardHtml(t)}</div>`;
+  }
+  return `<div class="panel" style="margin-top:18px"><h2>View nhanh giải đấu <span class="v41-marker">V42 LANDING DASHBOARD ACTIVE</span></h2><div class="empty">Chưa có dữ liệu dashboard.</div></div>`;
+}
+
 function renderInfo(){
   const t=selectedTournament();
   if(!t){featuredInfo.innerHTML=`<div class="panel"><h1>Thông tin giải đấu</h1><p class="sub">Chưa có giải đấu. Admin login để tạo giải đầu tiên.</p><button class="btn primary" onclick="showSection('login')">Login</button></div>`;return}
@@ -1114,13 +1122,7 @@ function renderInfo(){
           ${sponsorHtml(t)}
         </div>
 
-        <div class="panel" style="box-shadow:none;margin-top:18px;background:#fff">
-          <div class="itemhead">
-            <div><h3>Danh sách đăng ký & ghép cặp</h3><p class="sub">Gom theo trạng thái đã có đôi / chưa có đôi để dễ theo dõi. Trình nào chưa có người sẽ tự ẩn.</p></div>
-            <button class="btn green" onclick="openRegister('${t.id}')">Tôi cũng muốn tham gia</button>
-          </div>
-          ${publicNamesHtml(names,t)}
-        </div>
+        ${v42LandingDashboardHtml(t)}
 
         <div class="sticky-cta">
           <div><b>🔥 Giải đang mở đăng ký</b><br><span class="mini">Cùng rủ thêm đồng đội để giải vui hơn.</span></div>
@@ -2161,7 +2163,7 @@ function v41AllMatchesHtml(t){
 function v41HomeDashboardHtml(t){
   return `<div class="v41-home-dashboard">
     <div class="v41-home-head">
-      <div><h2>View nhanh giải đấu <span class="v41-marker">V41 HOME DASHBOARD ACTIVE</span></h2><div class="sub">Bảng điểm, thứ tự trận, trạng thái, điểm số và indicator thắng/thua.</div></div>
+      <div><h2>View nhanh giải đấu <span class="v41-marker">V42 LANDING DASHBOARD ACTIVE</span></h2><div class="sub">Bảng điểm, thứ tự trận, trạng thái, điểm số và indicator thắng/thua.</div></div>
       <div class="meta"><span class="badge blue">${tMatches(t.id).length} trận</span><span class="badge green">${regCount(t.id)} VĐV</span></div>
     </div>
     <div class="panel"><h3>Bảng điểm vòng bảng</h3>${typeof v36StandingsHtml==="function"?v36StandingsHtml(t):v35StandingsHtml(t)}</div>
