@@ -1572,7 +1572,7 @@ function v33HomeSnapshotHtml(t){
   const hasTeams=tTeams(t.id).some(tm=>tm.pool_group==="Bảng A"||tm.pool_group==="Bảng B");
   const hasMatches=tMatches(t.id).length>0;
   if(!hasTeams && !hasMatches)return "";
-  return `<div class="v35-card" style="margin-top:18px"><div class="v35-card-head"><div><h3>Bảng đấu & lịch thi đấu nhanh <span class="v36-marker">V36 ACTIVE</span></h3><div class="mini">Có bảng điểm, trạng thái trận và indicator thắng/thua.</div></div><span class="badge blue">Live update</span></div><div class="v35-card-body"><h3>Bảng điểm vòng bảng</h3>${v36StandingsHtml(t)}<h3 style="margin-top:18px">Lịch trận gần nhất</h3>${v36MatchesHtml(t,10)}<h3 style="margin-top:18px">Vòng trong</h3>${v34PlayoffMap(t,false)}</div></div>`;
+  return `<div class="v35-card" style="margin-top:18px"><div class="v35-card-head"><div><h3>Bảng đấu & lịch thi đấu nhanh <span class="v36-marker">V37 FIXED ORDER ACTIVE</span></h3><div class="mini">Có bảng điểm, trạng thái trận và indicator thắng/thua.</div></div><span class="badge blue">Live update</span></div><div class="v35-card-body"><h3>Bảng điểm vòng bảng</h3>${v36StandingsHtml(t)}<h3 style="margin-top:18px">Lịch trận gần nhất</h3>${v36MatchesHtml(t,10)}<h3 style="margin-top:18px">Vòng trong</h3>${v34PlayoffMap(t,false)}</div></div>`;
 }
 
 function v32ScheduleHtml(t){
@@ -1902,7 +1902,7 @@ function v35TournamentDashboardHtml(t){
   const matchCount=tMatches(t.id).length || 28;
   return `<div class="v35-dashboard">
     <div class="v35-hero"><div class="v35-hero-inner">
-      <div><span class="v35-kicker">🏆 Giải Đấu <span class="v35-marker">V36 ACTIVE</span></span><h2>Giải Pickleball<br>SABECO & Những Người Bạn - Lần 2</h2><p>Kết nối đam mê • Giao lưu bền chặt • Cùng nhau tỏa sáng</p><div class="v35-actions"><button class="btn gold" onclick="setTab('match_schedule')">Xem lịch thi đấu</button><button class="btn" onclick="setTab('format')">Xem thể thức</button></div></div>
+      <div><span class="v35-kicker">🏆 Giải Đấu <span class="v35-marker">V37 FIXED ORDER ACTIVE</span></span><h2>Giải Pickleball<br>SABECO & Những Người Bạn - Lần 2</h2><p>Kết nối đam mê • Giao lưu bền chặt • Cùng nhau tỏa sáng</p><div class="v35-actions"><button class="btn gold" onclick="setTab('match_schedule')">Xem lịch thi đấu</button><button class="btn" onclick="setTab('format')">Xem thể thức</button></div></div>
       <div class="v35-stat-row"><div class="v35-stat"><b>${teamCount}</b><span>đội</span></div><div class="v35-stat"><b>${regCount(t.id)||20}</b><span>VĐV</span></div><div class="v35-stat"><b>2</b><span>bảng đấu</span></div><div class="v35-stat"><b>3</b><span>sân thi đấu</span></div></div>
     </div></div>
     <div class="v35-card"><div class="v35-card-head"><h3>Các cặp thi đấu</h3><span class="badge blue">Mã đội + tên đội</span></div><div class="v35-card-body">${v35TeamsHtml(t)}</div></div>
@@ -2157,31 +2157,18 @@ function adminOrderedScheduleHtml(t){
     </div>`).join("")}
   </div>`;
 }
-async function renumberGroupMatches(){
+async async function renumberGroupMatches(){
   const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
   if(!t){alert("Chưa chọn giải.");return}
-  const rows=groupStageMatches(t.id);
-  if(!rows.length){alert("Chưa có lịch vòng bảng để đánh số.");return}
-  for(let i=0;i<rows.length;i++){
-    const m=rows[i];
-    const data={
-      id:m.id,
-      tournament_id:t.id,
-      category:m.category||((t.categories||[])[0]||"Đôi nam"),
-      match_round:m.match_round,
-      match_time:m.match_time||null,
-      court:m.court||"",
-      team_a:m.team_a,
-      team_b:m.team_b,
-      score_a:m.score_a??null,
-      score_b:m.score_b??null,
-      match_order:i+1
-    };
-    await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});
+  if(!v37HasEnoughTeamsForFixedSchedule(t)){alert("Cần đủ 5 đội Bảng A và 5 đội Bảng B để áp thứ tự cố định.");return}
+  const scheduled=v37FixedGroupSchedule(t);
+  for(const m of scheduled){
+    await upsertGeneratedMatch(t,m.baseRound,m.teamA,m.teamB,{court:"",match_order:m.order});
   }
-  alert("Đã đánh số lại thứ tự trận vòng bảng.");
+  await generatePlayoffPlaceholders(t,21);
+  alert("Đã áp lại thứ tự cố định: vòng bảng 1-20, vòng trong 21-28.");
   await loadAll();
-  state.activeTab="admin_schedule";
+  state.activeTab="match_schedule";
   renderTournamentDetail();
 }
 
@@ -2506,6 +2493,63 @@ function pickNextMatch(remaining, slotTeams, lastSlotTeams, globalPoolCount, pre
   });
   return remaining.indexOf(best);
 }
+
+function v37PoolTeamsByCode(t){
+  const pools=teamsByPool(t.id);
+  const a=(pools.find(([pool])=>pool==="Bảng A")?.[1]||[]);
+  const b=(pools.find(([pool])=>pool==="Bảng B")?.[1]||[]);
+  const map={};
+  a.forEach((team,i)=>{map[`A${i+1}`]=team.team_name});
+  b.forEach((team,i)=>{map[`B${i+1}`]=team.team_name});
+  return map;
+}
+function v37FixedGroupTemplate(){
+  return [
+    [1,"B","B3","B4"],
+    [2,"A","A1","A5"],
+    [3,"B","B1","B2"],
+    [4,"A","A3","A4"],
+    [5,"B","B4","B5"],
+    [6,"A","A2","A5"],
+    [7,"B","B2","B3"],
+    [8,"A","A1","A4"],
+    [9,"B","B1","B5"],
+    [10,"A","A2","A3"],
+    [11,"B","B2","B4"],
+    [12,"A","A4","A5"],
+    [13,"B","B3","B5"],
+    [14,"A","A1","A3"],
+    [15,"B","B1","B4"],
+    [16,"A","A2","A4"],
+    [17,"B","B2","B5"],
+    [18,"A","A3","A5"],
+    [19,"B","B1","B3"],
+    [20,"A","A1","A2"]
+  ];
+}
+function v37FixedGroupSchedule(t){
+  const map=v37PoolTeamsByCode(t);
+  return v37FixedGroupTemplate().map(([order,pool,codeA,codeB])=>{
+    const teamA=map[codeA], teamB=map[codeB];
+    if(!teamA || !teamB)return null;
+    return {
+      order,
+      pool,
+      codeA,
+      codeB,
+      baseRound:`Bảng ${pool}`,
+      match_round:`Bảng ${pool}`,
+      teamA,
+      teamB,
+      court:""
+    };
+  }).filter(Boolean);
+}
+function v37HasEnoughTeamsForFixedSchedule(t){
+  const map=v37PoolTeamsByCode(t);
+  return ["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5"].every(c=>!!map[c]);
+}
+
 function scheduleRoundRobin3Courts(t){
   const remaining=buildRoundRobinMatches(t);
   const scheduled=[];
@@ -2569,19 +2613,22 @@ async function generateGroupMatches(){
   if(v32HasGeneratedGroup(t.id)){alert("Vòng bảng đã được generate rồi. Không generate lại để tránh duplicate.");return}
   const pools=teamsByPool(t.id).filter(([pool])=>pool==="Bảng A"||pool==="Bảng B");
   if(pools.length<2){alert("Cần có đội trong cả Bảng A và Bảng B trước khi generate vòng bảng.");return}
-  if(pools.some(([_,teams])=>teams.length<2)){alert("Mỗi bảng cần tối thiểu 2 đội.");return}
-
-  const scheduled=scheduleRoundRobin3Courts(t);
-  if(!scheduled.length){alert("Chưa có đội để generate lịch.");return}
-
-  for(const m of scheduled){
-    await upsertGeneratedMatch(t,m.baseRound,m.teamA,m.teamB,{court:m.court,match_order:m.order});
+  if(!v37HasEnoughTeamsForFixedSchedule(t)){
+    alert("Cần đủ 5 đội Bảng A và 5 đội Bảng B để generate đúng lịch cố định 1-20.");
+    return;
   }
 
-  // Create the full playoff/shampoo-cup framework immediately.
-  await generatePlayoffPlaceholders(t,scheduled.length+1);
+  const scheduled=v37FixedGroupSchedule(t);
+  if(scheduled.length!==20){alert("Chưa đủ dữ liệu để generate đủ 20 trận vòng bảng.");return}
 
-  alert(`Đã generate/cập nhật ${scheduled.length} trận vòng bảng và tạo sẵn khung Seri A, Seri B, Cúp dầu gội.`);
+  for(const m of scheduled){
+    await upsertGeneratedMatch(t,m.baseRound,m.teamA,m.teamB,{court:"",match_order:m.order});
+  }
+
+  // Create playoff framework in fixed order: 21-28.
+  await generatePlayoffPlaceholders(t,21);
+
+  alert("Đã generate đúng lịch cố định: vòng bảng trận 1-20 và vòng trong trận 21-28.");
   await loadAll();
   state.activeTab="match_schedule";
   renderTournamentDetail();
@@ -2606,15 +2653,22 @@ async function upsertRound(t, round, teamA, teamB, extra={}){
   };
   await rpc("admin_upsert_match",{p_password:state.session.adminPassword,p_data:data});
 }
-async function generatePlayoffPlaceholders(t,startOrder=100){
-  await upsertRound(t,"Seri A - Bán kết 1","Nhất bảng A","Nhì bảng B",{match_order:startOrder});
-  await upsertRound(t,"Seri A - Bán kết 2","Nhất bảng B","Nhì bảng A",{match_order:startOrder+1});
-  await upsertRound(t,"Seri A - Tranh 3-4","Thua BK1","Thua BK2",{match_order:startOrder+2});
-  await upsertRound(t,"Seri A - Chung kết","Thắng BK1","Thắng BK2",{match_order:startOrder+3});
-  await upsertRound(t,"Seri B - Bán kết 1","Hạng 3 bảng A","Hạng 4 bảng B",{match_order:startOrder+4});
-  await upsertRound(t,"Seri B - Bán kết 2","Hạng 3 bảng B","Hạng 4 bảng A",{match_order:startOrder+5});
-  await upsertRound(t,"Seri B - Chung kết","Thắng BK3","Thắng BK4",{match_order:startOrder+6});
-  await upsertRound(t,"Cúp dầu gội - Chung kết","Chót bảng A","Chót bảng B",{match_order:startOrder+7});
+async function generatePlayoffPlaceholders(t,startOrder=21){
+  // Fixed playoff order requested by BTC:
+  // 21-22: Bán kết Seri B
+  // 23-24: Bán kết Seri A
+  // 25: Tranh 3-4 Seri A
+  // 26: Chung kết Seri B
+  // 27: Chung kết Seri A
+  // 28: Cúp dầu gội
+  await upsertRound(t,"Seri B - Bán kết 1","Hạng 3 bảng A","Hạng 4 bảng B",{match_order:21,court:""});
+  await upsertRound(t,"Seri B - Bán kết 2","Hạng 3 bảng B","Hạng 4 bảng A",{match_order:22,court:""});
+  await upsertRound(t,"Seri A - Bán kết 1","Nhất bảng A","Nhì bảng B",{match_order:23,court:""});
+  await upsertRound(t,"Seri A - Bán kết 2","Nhất bảng B","Nhì bảng A",{match_order:24,court:""});
+  await upsertRound(t,"Seri A - Tranh 3-4","Thua trận 23","Thua trận 24",{match_order:25,court:""});
+  await upsertRound(t,"Seri B - Chung kết","Thắng trận 21","Thắng trận 22",{match_order:26,court:""});
+  await upsertRound(t,"Seri A - Chung kết","Thắng trận 23","Thắng trận 24",{match_order:27,court:""});
+  await upsertRound(t,"Cúp dầu gội - Chung kết","Hạng 5 bảng A","Hạng 5 bảng B",{match_order:28,court:""});
 }
 async function generatePlayoffMatches(){
   const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
@@ -2629,15 +2683,15 @@ async function generatePlayoffMatches(){
 
   // Fill after group stage standings are available.
   if(A.length>=2 && B.length>=2){
-    await upsertRound(t,"Seri A - Bán kết 1",A[0]?.team||"Nhất bảng A",B[1]?.team||"Nhì bảng B");
-    await upsertRound(t,"Seri A - Bán kết 2",B[0]?.team||"Nhất bảng B",A[1]?.team||"Nhì bảng A");
+    await upsertRound(t,"Seri A - Bán kết 1",A[0]?.team||"Nhất bảng A",B[1]?.team||"Nhì bảng B",{match_order:23,court:""});
+    await upsertRound(t,"Seri A - Bán kết 2",B[0]?.team||"Nhất bảng B",A[1]?.team||"Nhì bảng A",{match_order:24,court:""});
   }
   if(A.length>=4 && B.length>=4){
-    await upsertRound(t,"Seri B - Bán kết 1",A[2]?.team||"Hạng 3 bảng A",B[3]?.team||"Hạng 4 bảng B");
-    await upsertRound(t,"Seri B - Bán kết 2",B[2]?.team||"Hạng 3 bảng B",A[3]?.team||"Hạng 4 bảng A");
+    await upsertRound(t,"Seri B - Bán kết 1",A[2]?.team||"Hạng 3 bảng A",B[3]?.team||"Hạng 4 bảng B",{match_order:21,court:""});
+    await upsertRound(t,"Seri B - Bán kết 2",B[2]?.team||"Hạng 3 bảng B",A[3]?.team||"Hạng 4 bảng A",{match_order:22,court:""});
   }
   if(A.length>=1 && B.length>=1){
-    await upsertRound(t,"Cúp dầu gội - Chung kết",A[A.length-1]?.team||"Chót bảng A",B[B.length-1]?.team||"Chót bảng B");
+    await upsertRound(t,"Cúp dầu gội - Chung kết",A[A.length-1]?.team||"Hạng 5 bảng A",B[B.length-1]?.team||"Hạng 5 bảng B",{match_order:28,court:""});
   }
 
   await loadAll();
@@ -2647,9 +2701,9 @@ async function generatePlayoffMatches(){
   const bs1=find("Seri B - Bán kết 1"), bs2=find("Seri B - Bán kết 2");
 
   // Fill final / third-place only after semifinals have results.
-  await upsertRound(t2,"Seri A - Chung kết",winnerOf(as1)||"Thắng BK1",winnerOf(as2)||"Thắng BK2");
-  await upsertRound(t2,"Seri A - Tranh 3-4",loserOf(as1)||"Thua BK1",loserOf(as2)||"Thua BK2");
-  await upsertRound(t2,"Seri B - Chung kết",winnerOf(bs1)||"Thắng BK3",winnerOf(bs2)||"Thắng BK4");
+  await upsertRound(t2,"Seri A - Chung kết",winnerOf(as1)||"Thắng trận 23",winnerOf(as2)||"Thắng trận 24",{match_order:27,court:""});
+  await upsertRound(t2,"Seri A - Tranh 3-4",loserOf(as1)||"Thua trận 23",loserOf(as2)||"Thua trận 24",{match_order:25,court:""});
+  await upsertRound(t2,"Seri B - Chung kết",winnerOf(bs1)||"Thắng trận 21",winnerOf(bs2)||"Thắng trận 22",{match_order:26,court:""});
 
   alert("Đã generate/cập nhật khung Seri A, Seri B và Cúp dầu gội theo giai đoạn hiện tại.");
   await loadAll(); state.activeTab="format"; renderTournamentDetail();
