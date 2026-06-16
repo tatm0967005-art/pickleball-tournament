@@ -1042,6 +1042,21 @@
   .pr44-mini-score,.pr44-bracket-vs{text-align:center!important}
 }
 
+  
+/* v49 mobile standings show point differential */
+@media(max-width:760px){
+  .v36-stand-row{grid-template-columns:24px 1fr 36px 42px 38px!important}
+  .v36-stand-row.header span:nth-child(3),
+  .v36-stand-row span:nth-child(3){display:none!important}
+  .v36-stand-row.header span:nth-child(6),
+  .v36-stand-row span:nth-child(6){display:inline-block!important}
+  .v36-diff{font-size:10px!important;font-weight:1000!important}
+}
+@media(max-width:390px){
+  .v36-stand-row{grid-template-columns:22px 1fr 34px 38px 34px!important}
+  .v36-diff{font-size:9px!important}
+}
+
   </style>
 </head>
 <body>
@@ -1563,7 +1578,7 @@ function pr46QuickInfoHtml(t){
   return `<div class="pr46-strip">
     <div class="pr46-now">
       <div class="pr46-now-head">
-        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V48 COMPACT MOBILE ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
+        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V49 MOBILE DIFF ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
       </div>
       <div class="pr46-now-grid">
         ${pr46MatchCard("🔥 Đang diễn ra",live,"Chưa có trận đang đánh")}
