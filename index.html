@@ -1057,6 +1057,60 @@
   .v36-diff{font-size:9px!important}
 }
 
+  
+/* v50 timeline, official countdown and fun news */
+.pr50-timeline-wrap{display:grid;gap:14px}
+.pr50-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;position:relative}
+.pr50-step{position:relative;border:1px solid #dbeafe;background:#fff;border-radius:22px;padding:15px;box-shadow:0 10px 28px rgba(15,42,85,.07);overflow:hidden}
+.pr50-step.done{background:linear-gradient(180deg,#f0fdf4,#fff);border-color:#86efac}
+.pr50-step.current{background:linear-gradient(180deg,#fffbeb,#fff);border-color:#facc15;box-shadow:0 14px 34px rgba(245,158,11,.16)}
+.pr50-step .num{width:38px;height:38px;border-radius:999px;display:grid;place-items:center;font-weight:1000;color:#fff;background:#2563eb;margin-bottom:10px}
+.pr50-step.done .num{background:#16a34a}.pr50-step.current .num{background:#f59e0b}
+.pr50-step b{display:block;color:#0f2a55;font-size:16px;margin-bottom:6px}
+.pr50-step .date{font-size:14px;color:#334155;font-weight:900}
+.pr50-step small{display:block;margin-top:5px;color:#64748b;line-height:1.4}
+.pr50-status{display:inline-flex;margin-top:10px;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:1000}
+.pr50-status.done{background:#dcfce7;color:#166534}.pr50-status.current{background:#fef3c7;color:#92400e}
+.pr50-countdown{margin-top:14px;border-radius:24px;background:linear-gradient(135deg,#061a3b,#0b4aa2);color:#fff;padding:18px;box-shadow:0 14px 38px rgba(15,42,85,.18);position:relative;overflow:hidden}
+.pr50-countdown:after{content:"";position:absolute;right:-60px;top:-70px;width:190px;height:190px;border-radius:999px;background:rgba(250,204,21,.25);filter:blur(12px)}
+.pr50-countdown-head{position:relative;z-index:1;display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.pr50-countdown h3{margin:0;color:#fff;text-transform:uppercase}
+.pr50-countdown .mini{color:#dbeafe}
+.pr50-countdown-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pr50-timebox{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:18px;padding:12px;text-align:center;backdrop-filter:blur(8px)}
+.pr50-timebox b{display:block;font-size:30px;color:#facc15;line-height:1}
+.pr50-timebox span{font-size:11px;color:#dbeafe;font-weight:900;text-transform:uppercase}
+.pr50-news{margin-top:14px;border:1px solid #fed7aa;background:linear-gradient(180deg,#fff7ed,#fff);border-radius:24px;padding:16px;box-shadow:0 12px 32px rgba(245,158,11,.12)}
+.pr50-news h3{margin:0 0 10px;color:#9a3412;text-transform:uppercase}
+.pr50-news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pr50-news-card{background:#fff;border:1px solid #fed7aa;border-radius:18px;padding:13px;color:#7c2d12}
+.pr50-news-card b{display:block;color:#9a3412;margin-bottom:5px}
+.pr50-news-card span{font-size:13px;line-height:1.4}
+.pr50-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
+@media(max-width:760px){
+  .pr50-progress{grid-template-columns:1fr!important;gap:8px!important}
+  .pr50-step{border-radius:15px!important;padding:10px!important;display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:flex-start}
+  .pr50-step .num{width:30px!important;height:30px!important;font-size:13px!important;margin-bottom:0!important}
+  .pr50-step b{font-size:13px!important;margin-bottom:3px!important}
+  .pr50-step .date{font-size:12px!important}
+  .pr50-step small{font-size:11px!important;margin-top:3px!important}
+  .pr50-status{font-size:9px!important;padding:3px 6px!important;margin-top:5px!important}
+  .pr50-countdown{border-radius:16px!important;padding:12px!important;margin-top:10px!important}
+  .pr50-countdown-head{display:block!important;margin-bottom:8px!important}
+  .pr50-countdown h3{font-size:15px!important}
+  .pr50-countdown .mini{font-size:11px!important}
+  .pr50-countdown-grid{grid-template-columns:repeat(4,1fr)!important;gap:6px!important}
+  .pr50-timebox{border-radius:12px!important;padding:8px 4px!important}
+  .pr50-timebox b{font-size:20px!important}
+  .pr50-timebox span{font-size:9px!important}
+  .pr50-news{border-radius:16px!important;padding:10px!important;margin-top:10px!important}
+  .pr50-news h3{font-size:14px!important}
+  .pr50-news-grid{grid-template-columns:1fr!important;gap:7px!important}
+  .pr50-news-card{border-radius:12px!important;padding:9px!important}
+  .pr50-news-card b{font-size:12px!important}
+  .pr50-news-card span{font-size:11px!important}
+}
+
   </style>
 </head>
 <body>
@@ -1213,10 +1267,12 @@ function countdownParts(v){
   if(!v || isNaN(ms) || ms <= 0) return {d:0,h:0,m:0,s:0,closed:true};
   return {d:Math.floor(ms/86400000),h:Math.floor((ms%86400000)/3600000),m:Math.floor((ms%3600000)/60000),s:Math.floor((ms%60000)/1000),closed:false};
 }
+function officialEventStartIso(){return "2026-06-20T08:00:00+07:00"}
 function bigCountdownHtml(t){
-  const c=countdownParts(t?.registration_deadline);
-  if(c.closed) return `<div class="countdown-card"><span>Hạn đăng ký</span><b>Đã hết hạn</b><small>${formatDate(t?.registration_deadline)}</small></div>`;
-  return `<div class="countdown-card"><span>Hạn đăng ký</span><b>Còn ${c.d} ngày ${c.h} giờ</b><small>${formatDate(t?.registration_deadline)}</small><div class="big-countdown" data-countdown="${esc(t?.registration_deadline||"")}"><div class="timebox"><b data-cd="d">${c.d}</b><span>Ngày</span></div><div class="timebox"><b data-cd="h">${c.h}</b><span>Giờ</span></div><div class="timebox"><b data-cd="m">${c.m}</b><span>Phút</span></div><div class="timebox"><b data-cd="s">${c.s}</b><span>Giây</span></div></div></div>`;
+  const target=officialEventStartIso();
+  const c=countdownParts(target);
+  if(c.closed) return `<div class="countdown-card"><span>Giải đấu chính thức</span><b>Đang diễn ra / đã diễn ra</b><small>08:00 GMT+7 • 20-Jun-2026</small></div>`;
+  return `<div class="countdown-card"><span>Countdown giải đấu</span><b>Còn ${c.d} ngày ${c.h} giờ</b><small>08:00 GMT+7 • 20-Jun-2026</small><div class="big-countdown" data-countdown="${target}"><div class="timebox"><b data-cd="d">${c.d}</b><span>Ngày</span></div><div class="timebox"><b data-cd="h">${c.h}</b><span>Giờ</span></div><div class="timebox"><b data-cd="m">${c.m}</b><span>Phút</span></div><div class="timebox"><b data-cd="s">${c.s}</b><span>Giây</span></div></div></div>`;
 }
 function startCountdownTicker(){
   document.querySelectorAll(".big-countdown[data-countdown]").forEach(box=>{
@@ -1363,23 +1419,55 @@ function sponsorHtml(t){
     </div>`).join("") + `</div>`;
 }
 function paymentDeadline(t){return t?.payment_deadline || t?.registration_deadline}
-function timelineHtml(t){
-  const meeting = t?.meeting_date || "15/06/2026";
-  const eventAward = t?.event_award_date || t?.event_date || "20/06/2026";
-  const steps = [
-    ["1","Hạn chót đăng ký",formatDate(t?.registration_deadline),"Chốt danh sách đăng ký chính thức."],
-    ["2","Hạn chót đóng phí",formatDate(paymentDeadline(t)),"Hạn đóng phí bằng hạn đăng ký."],
-    ["3","Họp chốt giải",meeting,"Chốt trình, bốc thăm, chia bảng, chọn sân thi đấu."],
-    ["4","Thi đấu & Trao giải",eventAward,"Thi đấu, giao lưu và trao giải trong ngày."]
-  ];
-  return `<div class="timeline">` + steps.map((x,i)=>`
-    <div class="timeline-step ${i===0?"active":""}">
-      <div class="num">${x[0]}</div>
-      <b>${esc(x[1])}</b>
-      <div>${esc(x[2]||"TBC")}</div>
-      <small>${esc(x[3])}</small>
-    </div>`).join("") + `</div>`;
+function pr50OfficialCountdownHtml(){
+  const target=officialEventStartIso();
+  const c=countdownParts(target);
+  return `<div class="pr50-countdown">
+    <div class="pr50-countdown-head">
+      <div><h3>Countdown đến giờ G</h3><div class="mini">Giải đấu chính thức diễn ra lúc <b>08:00 GMT+7 • 20-Jun-2026</b></div></div>
+      <span class="badge gold">Sẵn sàng ra sân</span>
+    </div>
+    <div class="pr50-countdown-grid big-countdown" data-countdown="${target}">
+      <div class="pr50-timebox"><b data-cd="d">${c.d}</b><span>Ngày</span></div>
+      <div class="pr50-timebox"><b data-cd="h">${c.h}</b><span>Giờ</span></div>
+      <div class="pr50-timebox"><b data-cd="m">${c.m}</b><span>Phút</span></div>
+      <div class="pr50-timebox"><b data-cd="s">${c.s}</b><span>Giây</span></div>
+    </div>
+  </div>`;
 }
+function pr50FunNewsHtml(){
+  return `<div class="pr50-news">
+    <h3>📰 Tin vui bên lề</h3>
+    <div class="pr50-news-grid">
+      <div class="pr50-news-card"><b>Không khí đã nóng lên</b><span>Các đội đang rất mong chờ ngày thi đấu và liên tục theo dõi lịch, bảng điểm.</span></div>
+      <div class="pr50-news-card"><b>Sau bốc thăm: bắt đầu “vào form”</b><span>Một số đội được ghi nhận đã lên lịch tập luyện riêng để làm quen chiến thuật đôi.</span></div>
+      <div class="pr50-news-card"><b>HLV chuyên nghiệp xuất hiện?</b><span>Tin hành lang cho biết vài đội đã tham khảo “HLV chuyên nghiệp” để tối ưu cú giao bóng và tinh thần fair-play 😄</span></div>
+    </div>
+  </div>`;
+}
+function timelineHtml(t){
+  const steps = [
+    ["1","Hạn chót đăng ký","13:00 15/06/2026","Chốt danh sách đăng ký chính thức.","done","Đã hoàn tất"],
+    ["2","Hạn chót đóng phí","13:00 15/06/2026","Hoàn tất lệ phí và xác nhận danh sách.","done","Đã hoàn tất"],
+    ["3","Họp chốt giải","15/06/2026","Chốt trình, bốc thăm, chia bảng và lịch thi đấu.","done","Đã hoàn tất"],
+    ["4","Thi đấu & Trao giải","08:00 20/06/2026","Thi đấu, giao lưu và trao giải trong ngày.","current","Đang chờ diễn ra"]
+  ];
+  return `<div class="pr50-timeline-wrap">
+    <div class="pr50-progress">` + steps.map(x=>`
+      <div class="pr50-step ${x[4]}">
+        <div class="num">${x[0]}</div>
+        <div>
+          <b>${esc(x[1])}</b>
+          <div class="date">${esc(x[2])}</div>
+          <small>${esc(x[3])}</small>
+          <span class="pr50-status ${x[4]}">${esc(x[5])}</span>
+        </div>
+      </div>`).join("") + `</div>
+    ${pr50OfficialCountdownHtml()}
+    ${pr50FunNewsHtml()}
+  </div>`;
+}
+
 
 function setAlert(id,type,msg){const el=document.getElementById(id); if(el) el.innerHTML = msg ? `<div class="${type}">${msg}</div>` : ""}
 function readSession(){try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||"null")}catch(e){return null}}
@@ -1578,7 +1666,7 @@ function pr46QuickInfoHtml(t){
   return `<div class="pr46-strip">
     <div class="pr46-now">
       <div class="pr46-now-head">
-        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V49 MOBILE DIFF ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
+        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V50 TIMELINE ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
       </div>
       <div class="pr46-now-grid">
         ${pr46MatchCard("🔥 Đang diễn ra",live,"Chưa có trận đang đánh")}
