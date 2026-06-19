@@ -1156,43 +1156,41 @@
 }
 
   
-/* v53 all team posters on main information page */
-.pr53-slot-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
-.pr53-pool-block{margin-top:16px}
-.pr53-pool-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.pr53-pool-title h3{margin:0;color:#0f2a55;text-transform:uppercase}
-.pr53-pool-title .count{border-radius:999px;background:#eff6ff;color:#1d4ed8;padding:6px 10px;font-size:12px;font-weight:1000}
-.pr53-pool-title.b .count{background:#fff7ed;color:#c2410c}
-.pr53-card{border:1px solid #e2e8f0;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 24px rgba(15,42,85,.08);min-width:0}
-.pr53-card.has-img{cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
-.pr53-card.has-img:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(15,42,85,.14)}
-.pr53-img{width:100%;aspect-ratio:1122/1402;object-fit:cover;display:block;background:#020617}
-.pr53-placeholder{aspect-ratio:1122/1402;display:grid;place-items:center;text-align:center;padding:14px;background:linear-gradient(180deg,#eff6ff,#fff);color:#1d4ed8}
-.pr53-placeholder.b{background:linear-gradient(180deg,#fff7ed,#fff);color:#c2410c}
-.pr53-placeholder b{display:block;font-size:28px;margin-bottom:6px}
-.pr53-placeholder span{font-weight:900;font-size:13px}
-.pr53-info{padding:10px}
-.pr53-info-top{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px}
-.pr53-code{display:inline-flex;border-radius:9px;background:#0f4ca8;color:#fff;padding:5px 8px;font-weight:1000;font-size:12px}
-.pr53-code.b{background:#d97706}
-.pr53-info b{display:block;color:#0f2a55;font-size:13px;line-height:1.25}
-.pr53-info .mini{font-size:11px;color:#64748b;line-height:1.3}
-.pr53-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
-@media(max-width:1100px){.pr53-slot-grid{grid-template-columns:repeat(3,1fr)}}
+/* v54 restored uploaded poster gallery on main landing */
+.pr54-gallery{margin-top:18px;background:linear-gradient(180deg,#ffffff,#f8fbff);border:1px solid #dbeafe;border-radius:26px;padding:18px;box-shadow:0 14px 38px rgba(15,42,85,.08)}
+.pr54-gallery-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.pr54-gallery-head h2{margin:0;color:#0f2a55;text-transform:uppercase}
+.pr54-gallery-head p{margin:5px 0 0;color:#64748b}
+.pr54-pool-block{margin-top:16px}
+.pr54-pool-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.pr54-pool-title h3{margin:0;color:#0f2a55;text-transform:uppercase}
+.pr54-count{border-radius:999px;background:#eff6ff;color:#1d4ed8;padding:6px 10px;font-size:12px;font-weight:1000}
+.pr54-pool-title.b .pr54-count{background:#fff7ed;color:#c2410c}
+.pr54-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.pr54-card{border:1px solid #e2e8f0;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 12px 28px rgba(15,42,85,.08);transition:transform .18s ease,box-shadow .18s ease}
+.pr54-card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(15,42,85,.14)}
+.pr54-img{width:100%;aspect-ratio:1122/1402;object-fit:cover;display:block;background:#020617;cursor:pointer}
+.pr54-info{padding:12px}
+.pr54-info-top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px}
+.pr54-code{background:#0f4ca8;color:#fff;border-radius:10px;padding:5px 8px;font-weight:1000;font-size:12px}
+.pr54-code.b{background:#d97706}
+.pr54-info b{color:#0f2a55;font-size:15px;display:block}
+.pr54-info .mini{color:#64748b}
+.pr54-empty{border:1px dashed #bfdbfe;background:#eff6ff;border-radius:18px;padding:16px;color:#1d4ed8;font-weight:900;text-align:center}
+.pr54-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
 @media(max-width:760px){
-  .pr51-gallery{border-radius:16px!important;padding:10px!important}
-  .pr51-gallery-head{display:block!important}
-  .pr51-gallery-head h2{font-size:15px!important}
-  .pr53-pool-block{margin-top:12px}
-  .pr53-pool-title h3{font-size:13px!important}
-  .pr53-pool-title .count{font-size:10px;padding:5px 7px}
-  .pr53-slot-grid{display:flex!important;overflow-x:auto;gap:10px!important;scroll-snap-type:x mandatory;padding-bottom:4px}
-  .pr53-card{min-width:72%;border-radius:16px!important;scroll-snap-align:start}
-  .pr53-info{padding:9px!important}
-  .pr53-info b{font-size:12px!important}
-  .pr53-code{font-size:10px!important;padding:4px 6px!important}
-  .pr53-placeholder b{font-size:22px}
-  .pr53-placeholder span{font-size:11px}
+  .pr54-gallery{border-radius:16px!important;padding:10px!important;margin-top:10px!important}
+  .pr54-gallery-head{display:block!important;margin-bottom:10px!important}
+  .pr54-gallery-head h2{font-size:15px!important;line-height:1.2!important}
+  .pr54-gallery-head p{font-size:11px!important}
+  .pr54-pool-block{margin-top:12px!important}
+  .pr54-pool-title h3{font-size:13px!important}
+  .pr54-count{font-size:10px!important;padding:5px 7px!important}
+  .pr54-grid{display:flex!important;overflow-x:auto;gap:10px!important;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .pr54-card{min-width:72%;border-radius:16px!important;scroll-snap-align:start}
+  .pr54-info{padding:9px!important}
+  .pr54-info b{font-size:12px!important}
+  .pr54-code{font-size:10px!important;padding:4px 6px!important}
 }
 
   </style>
@@ -1764,7 +1762,7 @@ function pr46QuickInfoHtml(t){
   return `<div class="pr46-strip">
     <div class="pr46-now">
       <div class="pr46-now-head">
-        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V53 ALL POSTERS ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
+        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V54 POSTERS RESTORED ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
       </div>
       <div class="pr46-now-grid">
         ${pr46MatchCard("🔥 Đang diễn ra",live,"Chưa có trận đang đánh")}
@@ -1801,66 +1799,48 @@ function pr46QuickInfoHtml(t){
 
 function pr51PoolLabel(pool){return pool==="Bảng B"?"Bảng B":"Bảng A"}
 function pr51TeamPostersHtml(t){
-  const rows=tTeamPosters(t.id);
-  const codesA=["A1","A2","A3","A4","A5"];
-  const codesB=["B1","B2","B3","B4","B5"];
-  const byKey={};
-  rows.forEach(r=>{
-    const key=`${r.pool_group||"Bảng A"}|${String(r.team_code||"").trim().toUpperCase()}`;
-    byKey[key]=r;
-  });
-  const fallbackNames={
-    A1:"A1 - Đội Bảng A",
-    A2:"A2 - Đội Bảng A",
-    A3:"A3 - Đội Bảng A",
-    A4:"A4 - Đội Bảng A",
-    A5:"A5 - Đội Bảng A",
-    B1:"B1 - Đội Bảng B",
-    B2:"B2 - Đội Bảng B",
-    B3:"B3 - Đội Bảng B",
-    B4:"B4 - Đội Bảng B",
-    B5:"B5 - Đội Bảng B"
+  const rows=tTeamPosters(t.id).filter(r=>r && r.image_data);
+  const normalizePool=(p)=>{
+    const s=String(p||"").trim().toLowerCase();
+    if(s==="b" || s.includes("bảng b") || s.includes("bang b"))return "Bảng B";
+    if(s==="a" || s.includes("bảng a") || s.includes("bang a"))return "Bảng A";
+    return p || "Chưa chia bảng";
   };
-  const card=(pool,code)=>{
-    const r=byKey[`${pool}|${code}`];
+  const grouped={};
+  rows.forEach(r=>{
+    const pool=normalizePool(r.pool_group);
+    if(!grouped[pool])grouped[pool]=[];
+    grouped[pool].push(r);
+  });
+  const orderPool=(a,b)=>{
+    const rank=x=>x==="Bảng A"?1:x==="Bảng B"?2:9;
+    return rank(a)-rank(b) || a.localeCompare(b,"vi");
+  };
+  const pools=Object.keys(grouped).sort(orderPool);
+  const card=(r)=>{
+    const pool=normalizePool(r.pool_group);
     const isB=pool==="Bảng B";
-    if(r && r.image_data){
-      return `<div class="pr53-card has-img" onclick="pr51OpenPoster('${esc(r.id)}')">
-        <img class="pr53-img" src="${esc(r.image_data)}" alt="${esc(r.title||r.team_name||code)}">
-        <div class="pr53-info">
-          <div class="pr53-info-top"><span class="pr53-code ${isB?"b":""}">${esc(code)}</span><span class="mini">${esc(pool)}</span></div>
-          <b>${esc(r.title||r.team_name||fallbackNames[code])}</b>
-          ${r.description?`<div class="mini">${esc(r.description)}</div>`:""}
-        </div>
-      </div>`;
-    }
-    return `<div class="pr53-card">
-      <div class="pr53-placeholder ${isB?"b":""}"><div><b>${esc(code)}</b><span>Chờ upload poster</span></div></div>
-      <div class="pr53-info">
-        <div class="pr53-info-top"><span class="pr53-code ${isB?"b":""}">${esc(code)}</span><span class="mini">${esc(pool)}</span></div>
-        <b>${esc(fallbackNames[code])}</b>
-        <div class="mini">BTC sẽ cập nhật poster đội tại đây.</div>
+    return `<div class="pr54-card">
+      <img class="pr54-img" src="${esc(r.image_data||"")}" alt="${esc(r.title||r.team_name||"Poster đội")}" onclick="pr51OpenPoster('${esc(r.id)}')">
+      <div class="pr54-info">
+        <div class="pr54-info-top"><span class="pr54-code ${isB?"b":""}">${esc(r.team_code||"Đội")}</span><span class="mini">${esc(pool)}</span></div>
+        <b>${esc(r.title||r.team_name||"Poster đội")}</b>
+        ${r.description?`<div class="mini">${esc(r.description)}</div>`:""}
       </div>
     </div>`;
   };
-  const uploadedA=codesA.filter(c=>byKey[`Bảng A|${c}`]?.image_data).length;
-  const uploadedB=codesB.filter(c=>byKey[`Bảng B|${c}`]?.image_data).length;
-  return `<div class="pr51-gallery">
-    <div class="pr51-gallery-head">
+  return `<div class="pr54-gallery">
+    <div class="pr54-gallery-head">
       <div>
-        <h2>Poster 10 đội thi đấu <span class="pr53-marker">V53 ALL POSTERS ACTIVE</span></h2>
-        <p>Góc PR chính thức cho toàn bộ các cặp thi đấu. Chia theo Bảng A / Bảng B, mỗi bảng 5 poster.</p>
+        <h2>Poster đội thi đấu <span class="pr54-marker">V54 POSTERS RESTORED ACTIVE</span></h2>
+        <p>Hiển thị toàn bộ poster đã upload từ Admin, gom theo từng bảng để PR giải đấu trên trang chính.</p>
       </div>
       <button class="btn" onclick="openTournament('${t.id}')">Xem chi tiết giải</button>
     </div>
-    <div class="pr53-pool-block">
-      <div class="pr53-pool-title"><h3>Bảng A</h3><span class="count">${uploadedA}/5 poster đã upload</span></div>
-      <div class="pr53-slot-grid">${codesA.map(c=>card("Bảng A",c)).join("")}</div>
-    </div>
-    <div class="pr53-pool-block">
-      <div class="pr53-pool-title b"><h3>Bảng B</h3><span class="count">${uploadedB}/5 poster đã upload</span></div>
-      <div class="pr53-slot-grid">${codesB.map(c=>card("Bảng B",c)).join("")}</div>
-    </div>
+    ${rows.length ? pools.map(pool=>`<div class="pr54-pool-block">
+      <div class="pr54-pool-title ${pool==="Bảng B"?"b":""}"><h3>${esc(pool)}</h3><span class="pr54-count">${grouped[pool].length} poster</span></div>
+      <div class="pr54-grid">${grouped[pool].map(card).join("")}</div>
+    </div>`).join("") : `<div class="pr54-empty">Chưa có poster nào được upload. Admin vào tab Poster đội để cập nhật.</div>`}
   </div>`;
 }
 
@@ -1960,6 +1940,8 @@ function pr43LandingHtml(t){
     </div>
 
     ${pr46QuickInfoHtml(t)}
+
+    ${pr51TeamPostersHtml(t)}
 
     <div class="pr43-section">
       <div class="pr43-section-head">
