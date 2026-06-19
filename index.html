@@ -4,8 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pickleball Tournament Portal - Role Based</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">window.pr51OpenPoster=pr51OpenPoster;window.deleteTeamPoster=deleteTeamPoster;window.clearPosterForm=clearPosterForm;
+</script>
+  <script src="./config.js">window.pr51OpenPoster=pr51OpenPoster;window.deleteTeamPoster=deleteTeamPoster;window.clearPosterForm=clearPosterForm;
+</script>
   <style>
     :root{
       --bg:#f4f7fb; --card:#fff; --ink:#102033; --muted:#64748b; --line:#e2e8f0;
@@ -1111,6 +1113,48 @@
   .pr50-news-card span{font-size:11px!important}
 }
 
+  
+/* v51 team poster gallery */
+.pr51-gallery{margin-top:18px;background:linear-gradient(180deg,#ffffff,#f8fbff);border:1px solid #dbeafe;border-radius:26px;padding:18px;box-shadow:0 14px 38px rgba(15,42,85,.08)}
+.pr51-gallery-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.pr51-gallery-head h2{margin:0;color:#0f2a55;text-transform:uppercase}
+.pr51-gallery-head p{margin:5px 0 0;color:#64748b}
+.pr51-pool-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.pr51-pool-chip{border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:7px 11px;font-weight:1000;font-size:12px}
+.pr51-poster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.pr51-poster-card{border:1px solid #e2e8f0;background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 12px 28px rgba(15,42,85,.08);transition:transform .18s ease,box-shadow .18s ease}
+.pr51-poster-card:hover{transform:translateY(-3px);box-shadow:0 18px 38px rgba(15,42,85,.14)}
+.pr51-poster-img{width:100%;aspect-ratio:1122/1402;object-fit:cover;display:block;background:#0f172a;cursor:pointer}
+.pr51-poster-info{padding:12px}
+.pr51-poster-info .top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px}
+.pr51-code{background:#0f4ca8;color:#fff;border-radius:10px;padding:5px 8px;font-weight:1000;font-size:12px}
+.pr51-code.b{background:#d97706}
+.pr51-poster-info b{color:#0f2a55;font-size:15px}
+.pr51-poster-info .mini{color:#64748b}
+.pr51-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pr51-admin-preview{border:1px dashed #bfdbfe;border-radius:20px;background:#f8fbff;padding:12px;display:grid;place-items:center;min-height:260px}
+.pr51-admin-preview img{max-width:220px;width:100%;border-radius:16px;box-shadow:0 10px 28px rgba(15,42,85,.14);aspect-ratio:1122/1402;object-fit:cover}
+.pr51-lightbox{position:fixed;inset:0;background:rgba(2,8,23,.88);z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px}
+.pr51-lightbox img{max-width:min(92vw,760px);max-height:92vh;border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.pr51-lightbox button{position:fixed;top:16px;right:16px;border:0;background:#fff;color:#0f172a;border-radius:999px;padding:10px 14px;font-weight:1000}
+.pr51-marker{display:inline-flex;border-radius:999px;background:#dcfce7;color:#166534;font-weight:1000;font-size:12px;padding:6px 10px;margin-left:8px}
+@media(max-width:760px){
+  .pr51-gallery{border-radius:16px!important;padding:10px!important;margin-top:10px!important}
+  .pr51-gallery-head{display:block!important;margin-bottom:10px!important}
+  .pr51-gallery-head h2{font-size:15px!important;line-height:1.2!important}
+  .pr51-gallery-head p{font-size:11px!important}
+  .pr51-pool-tabs{gap:5px!important;margin-bottom:9px!important}
+  .pr51-pool-chip{font-size:10px!important;padding:5px 7px!important}
+  .pr51-poster-grid{display:flex!important;overflow-x:auto;gap:10px!important;scroll-snap-type:x mandatory;padding-bottom:4px}
+  .pr51-poster-card{min-width:72%;border-radius:16px!important;scroll-snap-align:start}
+  .pr51-poster-info{padding:9px!important}
+  .pr51-poster-info b{font-size:12px!important}
+  .pr51-code{font-size:10px!important;padding:4px 6px!important}
+  .pr51-admin-grid{grid-template-columns:1fr!important}
+  .pr51-admin-preview{min-height:180px}
+  .pr51-admin-preview img{max-width:160px}
+}
+
   </style>
 </head>
 <body>
@@ -1198,7 +1242,7 @@ const SELECTED_TOURNAMENT_KEY = "pb.supabase.selected";
 const SESSION_KEY = "pb.portal.session.v11";
 let sb = null;
 let state = {
-  tournaments: [], rewards: [], matches: [], rankings: [], teams: [], publicStats: [], publicNames: [],
+  tournaments: [], rewards: [], matches: [], rankings: [], teams: [], teamPosters: [], publicStats: [], publicNames: [],
   selectedTournamentId: localStorage.getItem(SELECTED_TOURNAMENT_KEY) || "",
   activeTab: "overview",
   session: readSession(),
@@ -1281,6 +1325,19 @@ function startCountdownTicker(){
   });
 }
 function tTeams(id=state.selectedTournamentId){return (state.teams||[]).filter(x=>x.tournament_id===id)}
+
+function tTeamPosters(id=state.selectedTournamentId){return (state.teamPosters||[]).filter(x=>x.tournament_id===id).sort((a,b)=>(Number(a.sort_order||999)-Number(b.sort_order||999))||String(a.team_code||"").localeCompare(String(b.team_code||"")))}
+async function loadTeamPosters(tid=null){
+  const t = tid ? state.tournaments.find(x=>x.id===tid) : selectedTournament();
+  if(!t || !sb){state.teamPosters=[];return}
+  try{
+    state.teamPosters = await rpc("public_list_team_posters",{p_tournament_id:t.id});
+  }catch(e){
+    console.warn("public_list_team_posters not available yet. Run supabase_update_v51_team_posters.sql.", e);
+    state.teamPosters = [];
+  }
+}
+
 function teamsByPool(id=state.selectedTournamentId){const result={};tTeams(id).forEach(t=>{const g=t.pool_group||"Chưa chia bảng";if(!result[g])result[g]=[];result[g].push(t)});return Object.entries(result).sort((a,b)=>a[0].localeCompare(b[0],"vi"));}
 function usedPlayerNames(id=state.selectedTournamentId){const used=new Set();tTeams(id).forEach(t=>{if(t.player_1)used.add(norm(t.player_1));if(t.player_2)used.add(norm(t.player_2));});return used;}
 function availableRegistrationsForTeam(regs,t){const used=usedPlayerNames(t.id);return (regs||[]).filter(r=>!used.has(norm(r.full_name||r.name||r.player_name)));}
@@ -1498,6 +1555,7 @@ async function loadAll(){
     state.tournaments=tournaments.data||[];state.rewards=rewards.data||[];state.matches=matches.data||[];state.rankings=rankings.data||[];state.teams=teams.data||[];
     try{state.publicStats=await rpc("get_public_tournament_stats",{})}catch(e){console.warn(e);state.publicStats=[]}
     await loadPublicNames();
+    await loadTeamPosters();
     if(state.session){await loadMyRegistrations()}
     if(state.selectedTournamentId && !state.tournaments.some(t=>t.id===state.selectedTournamentId)){state.selectedTournamentId="";localStorage.removeItem(SELECTED_TOURNAMENT_KEY)}
     renderAll();
@@ -1666,7 +1724,7 @@ function pr46QuickInfoHtml(t){
   return `<div class="pr46-strip">
     <div class="pr46-now">
       <div class="pr46-now-head">
-        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V50 TIMELINE ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
+        <div><h2>Hôm nay cần xem gì? <span class="pr46-marker">V51 POSTER GALLERY ACTIVE</span></h2><div class="mini">Tóm tắt nhanh cho người chơi/khách vừa mở link.</div></div>
       </div>
       <div class="pr46-now-grid">
         ${pr46MatchCard("🔥 Đang diễn ra",live,"Chưa có trận đang đánh")}
@@ -1698,6 +1756,98 @@ function pr46QuickInfoHtml(t){
       </div>
     </div>
   </div>`;
+}
+
+
+function pr51PoolLabel(pool){return pool==="Bảng B"?"Bảng B":"Bảng A"}
+function pr51TeamPostersHtml(t){
+  const rows=tTeamPosters(t.id);
+  if(!rows.length){
+    return `<div class="pr51-gallery"><div class="pr51-gallery-head"><div><h2>Poster đội thi đấu <span class="pr51-marker">V51 POSTER GALLERY ACTIVE</span></h2><p>BTC sẽ cập nhật poster từng đội theo Bảng A / Bảng B tại đây.</p></div></div><div class="empty">Chưa có poster đội thi đấu.</div></div>`;
+  }
+  const pools=["Bảng A","Bảng B"];
+  const poolBlocks=pools.map(pool=>{
+    const list=rows.filter(r=>(r.pool_group||"Bảng A")===pool);
+    if(!list.length)return "";
+    return `<div style="margin-top:12px"><div class="pr51-pool-tabs"><span class="pr51-pool-chip">${pool} • ${list.length} poster</span></div><div class="pr51-poster-grid">${list.map(r=>`
+      <div class="pr51-poster-card">
+        <img class="pr51-poster-img" src="${esc(r.image_data||"")}" alt="${esc(r.title||r.team_name||"Poster đội")}" onclick="pr51OpenPoster('${esc(r.id)}')">
+        <div class="pr51-poster-info">
+          <div class="top"><span class="pr51-code ${(r.pool_group||"")==="Bảng B"?"b":""}">${esc(r.team_code||"")}</span><span class="mini">${esc(pr51PoolLabel(r.pool_group))}</span></div>
+          <b>${esc(r.title||r.team_name||"Poster đội")}</b>
+          ${r.description?`<div class="mini">${esc(r.description)}</div>`:""}
+        </div>
+      </div>`).join("")}</div></div>`;
+  }).join("");
+  return `<div class="pr51-gallery"><div class="pr51-gallery-head"><div><h2>Poster đội thi đấu <span class="pr51-marker">V51 POSTER GALLERY ACTIVE</span></h2><p>Góc PR vui cho các cặp thi đấu theo từng bảng. Click poster để xem ảnh lớn.</p></div><button class="btn" onclick="openTournament('${t.id}')">Xem chi tiết giải</button></div>${poolBlocks}</div>`;
+}
+function pr51OpenPoster(id){
+  const r=(state.teamPosters||[]).find(x=>String(x.id)===String(id));
+  if(!r || !r.image_data)return;
+  const div=document.createElement("div");
+  div.className="pr51-lightbox";
+  div.innerHTML=`<button onclick="this.parentElement.remove()">Đóng ✕</button><img src="${esc(r.image_data)}" alt="${esc(r.title||"Poster đội")}">`;
+  div.addEventListener("click",e=>{if(e.target===div)div.remove()});
+  document.body.appendChild(div);
+}
+function adminTeamPostersHtml(t){
+  const rows=tTeamPosters(t.id);
+  return `<div class="panel"><h2>Upload poster đội thi đấu</h2><p class="sub">Upload ảnh poster dọc theo từng bảng. Khuyến nghị tỷ lệ như ảnh mẫu: <b>1122 x 1402</b> hoặc cùng tỷ lệ dọc.</p>
+    <form id="teamPosterForm">
+      <input type="hidden" id="posterImageData">
+      <input type="hidden" id="posterId">
+      <div class="pr51-admin-grid">
+        <div>
+          <div class="formgrid">
+            <div><label>Bảng</label><select id="posterPool"><option>Bảng A</option><option>Bảng B</option></select></div>
+            <div><label>Mã đội</label><input id="posterCode" placeholder="A2"></div>
+            <div><label>Tên đội / tiêu đề</label><input id="posterTitle" placeholder="A Huy & Bà xã"></div>
+            <div><label>Thứ tự hiển thị</label><input id="posterOrder" type="number" value="1"></div>
+            <div class="full"><label>Mô tả ngắn</label><input id="posterDesc" placeholder="Couple giữ lửa / Kỹ thuật / Bảng A..."></div>
+            <div class="full"><label>Ảnh poster</label><input id="posterImageInput" type="file" accept="image/*"></div>
+          </div>
+          <div class="actions"><button class="btn primary" type="submit">Lưu poster</button><button class="btn" type="button" onclick="clearPosterForm()">Xóa form</button></div>
+        </div>
+        <div class="pr51-admin-preview" id="posterPreview"><span class="muted">Preview poster sẽ hiện tại đây</span></div>
+      </div>
+    </form>
+    <div style="margin-top:18px">${pr51TeamPostersHtml(t)}</div>
+    ${rows.length?`<div class="tablewrap" style="margin-top:18px"><table><thead><tr><th>Bảng</th><th>Mã</th><th>Poster</th><th>Thứ tự</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.pool_group)}</td><td>${esc(r.team_code||"")}</td><td>${esc(r.title||"")}</td><td>${esc(r.sort_order||"")}</td><td><button class="btn small red" onclick="deleteTeamPoster('${r.id}')">Xóa</button></td></tr>`).join("")}</tbody></table></div>`:""}
+  </div>`;
+}
+function clearPosterForm(){
+  ["posterId","posterImageData","posterCode","posterTitle","posterDesc"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+  const order=document.getElementById("posterOrder"); if(order)order.value=1;
+  const prev=document.getElementById("posterPreview"); if(prev)prev.innerHTML=`<span class="muted">Preview poster sẽ hiện tại đây</span>`;
+}
+async function submitTeamPoster(e){
+  e.preventDefault();
+  const t=state.tournaments.find(x=>x.id===state.selectedTournamentId);
+  if(!t){alert("Chưa chọn giải.");return}
+  if(!posterImageData.value){alert("Vui lòng chọn ảnh poster.");return}
+  const data={
+    id:posterId.value||null,
+    tournament_id:t.id,
+    pool_group:posterPool.value,
+    team_code:posterCode.value.trim(),
+    team_name:posterTitle.value.trim(),
+    title:posterTitle.value.trim(),
+    description:posterDesc.value.trim(),
+    image_data:posterImageData.value,
+    sort_order:Number(posterOrder.value||0)
+  };
+  await rpc("admin_upsert_team_poster",{p_password:state.session.adminPassword,p_data:data});
+  alert("Đã lưu poster đội.");
+  await loadTeamPosters(t.id);
+  state.activeTab="admin_posters";
+  renderTournamentDetail();
+}
+async function deleteTeamPoster(id){
+  if(!confirm("Xóa poster này?"))return;
+  await rpc("admin_delete_team_poster",{p_password:state.session.adminPassword,p_id:id});
+  await loadTeamPosters();
+  state.activeTab="admin_posters";
+  renderTournamentDetail();
 }
 
 function pr43LandingHtml(t){
@@ -2066,7 +2216,7 @@ function renderTournamentDetail(){
     ["rewards","Giải thưởng"],
     ["report","Báo cáo"]
   ];
-  if(canAdmin){tabs.push(["admin_setup",t?"Setup":"Tạo giải"]); if(t){tabs.push(["admin_regs","Quản lý đăng ký"],["admin_teams","Đội & Bảng"],["admin_rewards","Quản lý thưởng"],["admin_ranking","Thứ hạng"])}}
+  if(canAdmin){tabs.push(["admin_setup",t?"Setup":"Tạo giải"]); if(t){tabs.push(["admin_regs","Quản lý đăng ký"],["admin_teams","Đội & Bảng"],["admin_posters","Poster đội"],["admin_rewards","Quản lý thưởng"],["admin_ranking","Thứ hạng"])}}
   tournamentDetail.innerHTML=`
     ${t?heroMini(t):""}
     <div class="tabs">${tabs.map(([id,label])=>`<button class="${state.activeTab===id?"active":""}" onclick="setTab('${id}')">${label}</button>`).join("")}</div>
@@ -2677,6 +2827,7 @@ function renderTabContent(){
   else if(state.activeTab==="admin_regs" && t && isAdmin()) {el.innerHTML=adminRegsHtml(); loadCurrentRegistrations(true);}
   else if(state.activeTab==="admin_teams" && t && isAdmin()) {el.innerHTML=adminTeamsHtml(t); loadTeamBuilderRegs(t);}
   else if(state.activeTab==="admin_schedule" && t && isAdmin()) el.innerHTML=adminSchedulePageV31(t);
+  else if(state.activeTab==="admin_posters" && t && isAdmin()) el.innerHTML=adminTeamPostersHtml(t);
   else if(state.activeTab==="admin_rewards" && t && isAdmin()) el.innerHTML=adminRewardsHtml(t);
   else if(state.activeTab==="admin_ranking" && t && isAdmin()) el.innerHTML=adminRankingHtml(t);
   else el.innerHTML=`<div class="panel"><div class="empty">Không có quyền hoặc chưa chọn giải.</div></div>`;
@@ -3294,6 +3445,9 @@ function bindDynamicForms(){
   const matchForm=document.getElementById("matchForm"); if(matchForm)matchForm.addEventListener("submit",submitMatch);
   const rewardForm=document.getElementById("rewardForm"); if(rewardForm)rewardForm.addEventListener("submit",submitReward);
   const rewardImg=document.getElementById("rewardImageInput"); if(rewardImg)rewardImg.addEventListener("change",e=>readImage(e.target.files[0],d=>rewardImageData.value=d));
+  const posterForm=document.getElementById("teamPosterForm"); if(posterForm)posterForm.addEventListener("submit",submitTeamPoster);
+  const posterImg=document.getElementById("posterImageInput"); if(posterImg)posterImg.addEventListener("change",e=>readImage(e.target.files[0],d=>{posterImageData.value=d; const p=document.getElementById("posterPreview"); if(p)p.innerHTML=`<img src="${d}" alt="Preview">`;}));
+
   const rankingForm=document.getElementById("rankingForm"); if(rankingForm)rankingForm.addEventListener("submit",submitRanking);
 }
 function readImage(file,cb){if(!file)return;const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(file)}
@@ -3566,6 +3720,7 @@ window.v40SaveMatchOrder=v40SaveMatchOrder;window.v40SaveAllVisibleOrders=v40Sav
 initSupabase();
 loadAll();
 setInterval(startCountdownTicker, 1000);
+window.pr51OpenPoster=pr51OpenPoster;window.deleteTeamPoster=deleteTeamPoster;window.clearPosterForm=clearPosterForm;
 </script>
 </body>
 </html>
